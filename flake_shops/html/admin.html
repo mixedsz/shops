@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Shop System</title>
+    <script src="nui://game/ui/jquery.js" type="text/javascript"></script>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+    <link href="admin_style.css" rel="stylesheet" type="text/css" />
+    <link href='https://fonts.googleapis.com/css?family=Arizonia' rel='stylesheet' type='text/css'>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="//code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+</head>
+<body>
+    <!-- Shop UI (from index.html) -->
+    <div id="bg"></div>
+    <div id="wrapper">
+        <div id="inner_wrap">
+            <div id="shopdisplay">
+                <div id="menuwrap">
+                    <div class="shoptitle" id="shopname">Shop</div>
+                    <div class="shoptitle" id="status"></div>
+                    <input type="text" id="search" placeholder="🔎 Search item" value="" />
+                </div>
+                <div id="itembox"></div>
+            </div>
+
+            <div id="cartdisplay">
+                <div id="carticon" class="carttitle">
+                    <span class="carticon">
+                        <img src="img/carticon.png" height="22" width="22"/>
+                    </span>
+                    <span class="cartname">
+                        SHOPPING CART - <div id="cartCount">0 ITEMS</div>
+                    </span>
+                </div>
+                <div id="cart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modern Admin Dashboard UI -->
+    <div id="admin-wrapper" style="display: none;">
+        <div id="admin-dashboard">
+            <!-- Sidebar -->
+            <div id="sidebar">
+                <div id="sidebar-header">
+                    <button class="theme-toggle" id="theme-toggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+                <nav id="sidebar-nav">
+                    <a href="#" class="nav-item active" data-page="dashboard">
+                        <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+                        <span class="nav-text">Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="shops">
+                        <span class="nav-icon"><i class="fas fa-store"></i></span>
+                        <span class="nav-text">Shops</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content Area -->
+            <div id="main-content">
+                <!-- Header -->
+                <div id="content-header">
+                    <div class="header-left">
+                        <input type="text" id="shops-search" placeholder="Search shops..." />
+                    </div>
+                    <div class="header-right">
+                        <button id="create-new-shop" class="btn-create"><i class="fas fa-plus"></i> Create New Shop</button>
+                        <div class="user-badge">
+                            <img class="user-avatar" id="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar" />
+                            <span class="user-info">
+                                <span class="user-name" id="user-name">Loading...</span>
+                                <span class="user-id">ID: <span id="user-id">-</span></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard -->
+                <div id="dashboard-page" class="content-page active">
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <div class="card-icon" style="background: rgba(16, 185, 129, 0.2); color: #10b981;">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-label">Total Shops</div>
+                                <div class="card-value" id="total-shops">0</div>
+                                <div class="card-subtitle">Active shop locations</div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-icon" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6;">
+                                <i class="fas fa-box"></i>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-label">Total Items</div>
+                                <div class="card-value" id="total-items">0</div>
+                                <div class="card-subtitle">Across all shops</div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-icon" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b;">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-label">Shop Locations</div>
+                                <div class="card-value" id="total-locations">0</div>
+                                <div class="card-subtitle">Total coordinates</div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card wide">
+                            <div class="card-header">
+                                <h3><i class="fas fa-store"></i> Shop Analytics</h3>
+                                <p style="color: #6b7280; font-size: 13px; margin-top: 4px;">Detailed statistics for each shop location</p>
+                            </div>
+                            <div id="shop-analytics-container">
+                                <div class="no-data">No shop data available</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shops Table -->
+                <div id="shops-page" class="content-page">
+                    <div class="table-container">
+                        <table id="shops-table">
+                            <thead>
+                                <tr>
+                                    <th>Shop Name</th>
+                                    <th>Shop Label</th>
+                                    <th>Items Count</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shops-table-body">
+                                <tr>
+                                    <td colspan="4" class="no-data">Loading shops...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="table-pagination">
+                            <button class="page-btn" id="prev-page">‹</button>
+                            <span class="page-info"><span id="current-page">1</span></span>
+                            <button class="page-btn" id="next-page">›</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Shop Create/Edit Modal -->
+    <div id="shop-modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 id="modal-title">Create New Shop</h2>
+                <button id="close-modal" class="modal-close">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Tabs -->
+                <div class="modal-tabs">
+                    <button class="tab-btn active" data-tab="basic">Basic Info</button>
+                    <button class="tab-btn" data-tab="items">Items</button>
+                    <button class="tab-btn" data-tab="settings">Settings</button>
+                    <button class="tab-btn" data-tab="ped">Ped Config</button>
+                    <button class="tab-btn" data-tab="blip">Map Blip</button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="modal-tab-content">
+                    <!-- Basic Info Tab -->
+                    <div class="tab-pane active" data-tab="basic">
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-clipboard"></i></div>
+                            <div class="section-content">
+                                <h3>Description</h3>
+                                <p>Configure the basic information for your shop including name and logo.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-tag"></i></div>
+                            <div class="section-content">
+                                <h3>Shop Name</h3>
+                                <input type="text" id="shop-name" placeholder="e.g., ConvenienceStore" />
+                                <small>Unique identifier for the shop</small>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-image"></i></div>
+                            <div class="section-content">
+                                <h3>Shop Logo</h3>
+                                <input type="text" id="shop-logo" placeholder="blackmarket.png or https://i.imgur.com/example.png" value="blackmarket.png" />
+                                <small>URL or filename from html/img/ directory</small>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-map-marker-alt"></i></div>
+                            <div class="section-content">
+                                <h3>Locations</h3>
+                                <div id="positions-list"></div>
+                                <div class="button-group">
+                                    <button id="add-position" class="btn-secondary"><i class="fas fa-plus"></i> Add Position</button>
+                                    <button id="add-current-position" class="btn-secondary"><i class="fas fa-crosshairs"></i> Current Position</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-dollar-sign"></i></div>
+                            <div class="section-content">
+                                <h3>Currency Options</h3>
+                                <div id="currency-list">
+                                    <label><input type="checkbox" class="currency-check" value="cash"> Cash</label>
+                                    <label><input type="checkbox" class="currency-check" value="bank"> Bank</label>
+                                    <label><input type="checkbox" class="currency-check" value="money"> Money (ESX)</label>
+                                    <label><input type="checkbox" class="currency-check" value="black_money"> Black Money</label>
+                                    <label><input type="checkbox" class="currency-check" value="crypto"> Crypto</label>
+                                    <label><input type="checkbox" class="currency-check" value="blackdiamond"> Black Diamond</label>
+                                </div>
+                                <div class="custom-currency-group">
+                                    <input type="text" id="custom-currency" placeholder="Custom currency item name" />
+                                    <button id="add-custom-currency" class="btn-secondary">Add</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Items Tab -->
+                    <div class="tab-pane" data-tab="items">
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-box"></i></div>
+                            <div class="section-content">
+                                <h3>Shop Items</h3>
+                                <p>Configure the items available in this shop.</p>
+                            </div>
+                        </div>
+
+                        <div class="items-tabs">
+                            <button class="items-tab-btn active" data-items-tab="manual">Manual Entry</button>
+                            <button class="items-tab-btn" data-items-tab="server">Server Items</button>
+                        </div>
+
+                        <div class="items-tab-content">
+                            <div class="items-tab-pane active" data-items-tab="manual">
+                                <div id="items-list"></div>
+                                <button id="add-item" class="btn-add"><i class="fas fa-plus"></i> Add Item</button>
+                            </div>
+                            <div class="items-tab-pane" data-items-tab="server">
+                                <button id="add-item-from-list" class="btn-primary"><i class="fas fa-search"></i> Browse Server Items</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab -->
+                    <div class="tab-pane" data-tab="settings">
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-cog"></i></div>
+                            <div class="section-content">
+                                <h3>Shop Settings</h3>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="use-pickup">
+                                    <span>Use Pickup System</span>
+                                </label>
+                                <small>If enabled, items will be delivered to a pickup location</small>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-user"></i></div>
+                            <div class="section-content">
+                                <h3>NPC Settings</h3>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="use-ped">
+                                    <span>Use Ped (instead of marker)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ped Config Tab -->
+                    <div class="tab-pane" data-tab="ped">
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-user-tie"></i></div>
+                            <div class="section-content">
+                                <h3>Ped Model</h3>
+                                <input type="text" id="ped-model" placeholder="mp_m_shopkeep_01" value="mp_m_shopkeep_01" />
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-compass"></i></div>
+                            <div class="section-content">
+                                <h3>Heading</h3>
+                                <input type="number" id="ped-heading" placeholder="0.0" value="0.0" step="0.1" />
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-video"></i></div>
+                            <div class="section-content">
+                                <h3>Scenario</h3>
+                                <input type="text" id="ped-scenario" placeholder="WORLD_HUMAN_STAND_IMPATIENT" value="WORLD_HUMAN_STAND_IMPATIENT" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Map Blip Tab -->
+                    <div class="tab-pane" data-tab="blip">
+                        <div class="form-section">
+                            <div class="section-icon"><i class="fas fa-map-marked-alt"></i></div>
+                            <div class="section-content">
+                                <h3>Map Blip Settings</h3>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="use-blip">
+                                    <span>Show Blip on Map</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="blip-settings">
+                            <div class="form-section">
+                                <div class="section-icon"><i class="fas fa-tag"></i></div>
+                                <div class="section-content">
+                                    <h3>Blip Name</h3>
+                                    <input type="text" id="blip-name" placeholder="Shop" />
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <div class="section-icon"><i class="fas fa-icons"></i></div>
+                                <div class="section-content">
+                                    <h3>Sprite ID</h3>
+                                    <input type="number" id="blip-sprite" placeholder="52" value="52" />
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <div class="section-icon"><i class="fas fa-palette"></i></div>
+                                <div class="section-content">
+                                    <h3>Color</h3>
+                                    <input type="number" id="blip-colour" placeholder="2" value="2" />
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <div class="section-icon"><i class="fas fa-expand"></i></div>
+                                <div class="section-content">
+                                    <h3>Scale</h3>
+                                    <input type="number" id="blip-scale" placeholder="0.7" value="0.7" step="0.1" />
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <div class="section-icon"><i class="fas fa-map-pin"></i></div>
+                                <div class="section-content">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="blip-shortrange" checked>
+                                        <span>Short Range</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="footer-left">
+                    <button id="delete-shop" class="btn-delete" style="display: none;">Delete</button>
+                </div>
+                <div class="footer-right">
+                    <button id="cancel-modal" class="btn-cancel">Cancel</button>
+                    <button id="save-shop" class="btn-save">Save Shop</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Selector Modal -->
+    <div id="item-selector-modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="item-selector-container">
+            <div class="item-selector-header">
+                <h2><i class="fas fa-box"></i> Select Item from Server</h2>
+                <button id="close-item-selector" class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="item-selector-body">
+                <input type="text" id="item-search" placeholder="Search items..." />
+                <div id="item-selector-loading" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p>Loading items...</p>
+                </div>
+                <div id="item-selector-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirm-modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="confirm-container">
+            <div class="confirm-icon">!</div>
+            <h3 id="confirm-title">Confirm Action</h3>
+            <p id="confirm-message">Are you sure you want to proceed?</p>
+            <div class="confirm-actions">
+                <button id="confirm-cancel" class="btn-cancel">Cancel</button>
+                <button id="confirm-ok" class="btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Notification Toast -->
+    <div id="notification-container"></div>
+
+    <!-- Load both scripts -->
+    <script src="script.js" type="text/javascript"></script>
+    <script src="admin_script.js" type="text/javascript"></script>
+</body>
+</html>
