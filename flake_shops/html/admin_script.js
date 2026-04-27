@@ -748,11 +748,11 @@ $(function() {
         let modal = $("#analytics-modal");
         if (!modal.length) {
             $("body").append(`
-                <div id="analytics-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:none;align-items:center;justify-content:center;">
-                    <div class="analytics-modal-container" style="background:#1f2937;border:1px solid rgba(255,255,255,0.1);border-radius:12px;width:760px;max-width:90vw;max-height:85vh;display:flex;flex-direction:column;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;">
-                            <h2 id="analytics-modal-title" style="margin:0;color:#f9fafb;font-size:18px;font-weight:600;">Shop Analytics</h2>
-                            <button id="close-analytics-modal" style="background:none;border:none;color:#9ca3af;font-size:24px;cursor:pointer;line-height:1;padding:0 4px;">&times;</button>
+                <div id="analytics-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:none;align-items:center;justify-content:center;">
+                    <div class="analytics-modal-container" style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;width:820px;max-width:90vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 80px rgba(0,0,0,0.8);">
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #2a2a2a;flex-shrink:0;">
+                            <h2 id="analytics-modal-title" style="margin:0;color:#e5e7eb;font-size:16px;font-weight:600;font-family:'Inter','Segoe UI',sans-serif;letter-spacing:0.02em;">Shop Analytics</h2>
+                            <button id="close-analytics-modal" style="background:#1f1f1f;border:1px solid #2a2a2a;border-radius:6px;color:#9ca3af;font-size:18px;cursor:pointer;line-height:1;padding:4px 10px;transition:all 0.15s;">&times;</button>
                         </div>
                         <div id="analytics-modal-body" style="padding:24px;overflow-y:auto;flex:1;"></div>
                     </div>
@@ -770,18 +770,18 @@ $(function() {
         const uniqueCustomers   = parseFloat(analytics.uniqueCustomers)    || 0;
         const avgOrder          = totalTransactions > 0 ? (totalRevenue / totalTransactions).toFixed(0) : 0;
 
-        const cardStyle = "background:#111827;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;text-align:center;";
-        const labelStyle = "color:#9ca3af;font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;";
-        const valueStyle = "color:#f9fafb;font-size:22px;font-weight:700;";
+        const cardStyle = "background:#0d0d0d;border:1px solid #2a2a2a;border-radius:10px;padding:18px 16px;text-align:center;";
+        const labelStyle = "color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;font-family:'Inter','Segoe UI',sans-serif;";
+        const valueStyle = "color:#e5e7eb;font-size:22px;font-weight:700;font-family:'Inter','Segoe UI',sans-serif;";
         const iconStyle  = "font-size:18px;margin-bottom:8px;";
 
         function buildTable(cols, rows, emptyMsg) {
-            if (!rows || !rows.length) return `<p style="color:#6b7280;font-size:13px;">${emptyMsg}</p>`;
-            return `<table style="width:100%;border-collapse:collapse;font-size:13px;">
-                <thead><tr style="color:#9ca3af;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);">
-                    ${cols.map(c => `<th style="padding:8px ${c.pl||'8px'} 8px 0;">${c.label}</th>`).join('')}
+            if (!rows || !rows.length) return `<p style="color:#6b7280;font-size:13px;font-family:'Inter','Segoe UI',sans-serif;">${emptyMsg}</p>`;
+            return `<table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Inter','Segoe UI',sans-serif;">
+                <thead><tr style="color:#6b7280;text-align:left;border-bottom:1px solid #2a2a2a;text-transform:uppercase;letter-spacing:0.05em;font-size:11px;">
+                    ${cols.map(c => `<th style="padding:8px ${c.pl||'8px'} 8px 0;font-weight:500;">${c.label}</th>`).join('')}
                 </tr></thead>
-                <tbody>${rows.map(r => `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">${cols.map(c => `<td style="padding:8px ${c.pl||'8px'} 8px 0;color:${c.color||'#d1d5db'};">${r[c.key]}</td>`).join('')}</tr>`).join('')}</tbody>
+                <tbody>${rows.map(r => `<tr style="border-bottom:1px solid #1f1f1f;">${cols.map(c => `<td style="padding:9px ${c.pl||'8px'} 9px 0;color:${c.color||'#9ca3af'};">${r[c.key]}</td>`).join('')}</tr>`).join('')}</tbody>
             </table>`;
         }
 
@@ -830,7 +830,7 @@ $(function() {
             </div>
 
             <div style="margin-bottom:20px;">
-                <h3 style="color:#f9fafb;font-size:14px;font-weight:600;margin:0 0 12px;display:flex;align-items:center;gap:8px;">
+                <h3 style="color:#e5e7eb;font-size:13px;font-weight:600;margin:0 0 12px;display:flex;align-items:center;gap:8px;font-family:'Inter','Segoe UI',sans-serif;letter-spacing:0.02em;text-transform:uppercase;">
                     <i class="fas fa-fire" style="color:#f59e0b;"></i> Top Selling Items
                 </h3>
                 ${buildTable(
@@ -840,7 +840,7 @@ $(function() {
             </div>
 
             <div style="margin-bottom:20px;">
-                <h3 style="color:#f9fafb;font-size:14px;font-weight:600;margin:0 0 12px;display:flex;align-items:center;gap:8px;">
+                <h3 style="color:#e5e7eb;font-size:13px;font-weight:600;margin:0 0 12px;display:flex;align-items:center;gap:8px;font-family:'Inter','Segoe UI',sans-serif;letter-spacing:0.02em;text-transform:uppercase;">
                     <i class="fas fa-calendar" style="color:#3b82f6;"></i> Last 7 Days Revenue
                 </h3>
                 ${buildTable(
@@ -850,7 +850,7 @@ $(function() {
             </div>
 
             <div>
-                <h3 style="color:#f9fafb;font-size:14px;font-weight:600;margin:0 0 12px;display:flex;align-items:center;gap:8px;">
+                <h3 style="color:#e5e7eb;font-size:13px;font-weight:600;margin:0 0 12px;display:flex;align-items:center;gap:8px;font-family:'Inter','Segoe UI',sans-serif;letter-spacing:0.02em;text-transform:uppercase;">
                     <i class="fas fa-clock" style="color:#10b981;"></i> Recent Purchases
                 </h3>
                 ${buildTable(
