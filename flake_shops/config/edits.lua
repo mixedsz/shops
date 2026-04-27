@@ -1,22 +1,10 @@
 --#Notifications
 Config.Notify = function(message, type)
-  -- Try ox_lib first
-  if GetResourceState('ox_lib') ~= 'missing' then
-    local oxType = type == 'success' and 'success' or type == 'error' and 'error' or type == 'warning' and 'warning' or 'inform'
-    exports.ox_lib:notify({
-      title = 'Shop',
-      description = message,
-      type = oxType,
-      position = 'top'
-    })
-  else
-    -- Fallback to custom notification for shop menu UI
     SendNUIMessage({
-      type = 'notify',
-      message = message,
-      notifType = type
+        type = 'notify',
+        message = message,
+        notifType = type
     })
-  end
 end
 
 Config.Notifications = {

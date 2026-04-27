@@ -713,11 +713,11 @@ $(function() {
         if ($("#total-transactions").length) $("#total-transactions").text(totalTransactions.toLocaleString());
         if ($("#total-customers").length)    $("#total-customers").text(totalCustomers.toLocaleString());
 
-        const container = $("#analytics-cards");
+        const container = $("#shop-analytics-container");
         if (!container.length) return;
         container.empty();
         if (!analytics.length) {
-            container.html('<p style="color:#6b7280;text-align:center;padding:20px;">No analytics data yet. Data is collected when players make purchases.</p>');
+            container.html('<div class="no-data">No analytics data yet. Data is collected when players make purchases.</div>');
             return;
         }
         analytics.forEach(function(row) {

@@ -1,5 +1,17 @@
 $(function() {
 
+    function showNotification(message, type) {
+        const icons = { success: "✓", error: "✕", warning: "⚠", info: "ℹ" };
+        const t = (type === "success" || type === "error" || type === "warning" || type === "info") ? type : "info";
+        const notif = $(`
+            <div class="shop-notification ${t}">
+                <div class="shop-notif-icon">${icons[t] || icons.info}</div>
+                <div class="shop-notif-msg">${message}</div>
+            </div>
+        `);
+        $("#notification-container").append(notif);
+        setTimeout(() => notif.fadeOut(300, function() { $(this).remove(); }), 4000);
+    }
 
     function calculateTotal(t, a) {
         let total = 0;
@@ -26,6 +38,10 @@ $(function() {
     // Listen for NUI messages from client.lua
     window.addEventListener("message", function(event) {
         const data = event.data;
+        if (data.type === "notify") {
+            showNotification(data.message, data.notifType);
+            return;
+        }
         if (data.type === "shop") {
             shopData = data;
             $("#wrapper, #menuwrap, #bg").fadeIn();
