@@ -1,50 +1,44 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Black Market</title>
-
-    <!-- Required for FiveM NUI -->
+    <title>Shop</title>
     <script src="nui://game/ui/jquery.js" type="text/javascript"></script>
     <link href="style.css" rel="stylesheet" type="text/css" />
-
-    <!-- Optional fonts -->
-    <link href='https://fonts.googleapis.com/css?family=Arizonia' rel='stylesheet' type='text/css'>
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
-
-    <!-- jQuery UI references (optional) -->
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
-    <script src="//code.jquery.com/jquery-1.12.4.js"></script>
-    <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
     <div id="bg"></div>
     <div id="wrapper">
         <div id="inner_wrap">
+
+            <!-- Left panel: items -->
             <div id="shopdisplay">
                 <div id="menuwrap">
-                    <div class="shoptitle" id="shopname">Black Market</div>
-                    <div class="shoptitle" id="status"></div>
-                    <input type="text" id="search" placeholder="🔎 Search item" value="" />
+                    <div class="shoptitle" id="shopname">Shop</div>
+                    <div id="status"></div>
+                    <div id="search-wrap">
+                        <i class="fas fa-search" id="search-icon"></i>
+                        <input type="text" id="search" placeholder="Search items..." autocomplete="off" />
+                    </div>
                 </div>
                 <div id="itembox"></div>
+                <div id="nostock"><i class="fas fa-box-open" style="font-size:32px;margin-bottom:12px;display:block;"></i>No items available</div>
             </div>
 
+            <!-- Right panel: cart -->
             <div id="cartdisplay">
-                <div id="carticon" class="carttitle">
-                    <span class="carticon">
-                        <img src="img/carticon.png" height="22" width="22"/>
-                    </span>
-                    <span class="cartname">
-                        SHOPPING CART - <div id="cartCount">0 ITEMS</div>
-                    </span>
+                <div id="carticon">
+                    <i class="fas fa-shopping-cart" style="color:#f59e0b;font-size:15px;"></i>
+                    <span class="cartname">Cart &mdash; <span id="cartCount">0 Items</span></span>
                 </div>
                 <div id="cart"></div>
             </div>
+
         </div>
     </div>
 
-    <!-- Our main JS for the shop -->
     <script src="script.js" type="text/javascript"></script>
 </body>
 </html>
