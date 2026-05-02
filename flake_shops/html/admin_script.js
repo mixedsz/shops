@@ -698,7 +698,15 @@ $(function() {
         if (e.target === this) closeAdmin();
     });
 
-    // ── Analytics dashboard cards (all shops overview) ────────
+    // ── Dashboard analytics cards (all shops overview) ────────
+    function formatAnalyticsDate(val) {
+        if (!val) return 'N/A';
+        const ms = typeof val === 'number' ? val : parseInt(val, 10);
+        const d = isNaN(ms) ? new Date(val) : new Date(ms);
+        if (isNaN(d.getTime())) return String(val);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
     function updateAnalyticsDisplay(analytics) {
         if (!analytics || !Array.isArray(analytics)) return;
 
@@ -713,32 +721,52 @@ $(function() {
         if ($("#total-transactions").length) $("#total-transactions").text(totalTransactions.toLocaleString());
         if ($("#total-customers").length)    $("#total-customers").text(totalCustomers.toLocaleString());
 
-        const container = $("#analytics-cards");
+        const container = $("#shop-analytics-container");
         if (!container.length) return;
         container.empty();
         if (!analytics.length) {
-            container.html('<p style="color:#6b7280;text-align:center;padding:20px;">No analytics data yet. Data is collected when players make purchases.</p>');
+            container.html('<div class="no-data">No analytics data yet. Data is collected when players make purchases.</div>');
             return;
         }
+        const grid = $('<div class="shop-analytics-grid"></div>');
         analytics.forEach(function(row) {
-            container.append(`
+            grid.append(`
                 <div class="shop-analytics-card">
                     <div class="shop-analytics-header">
                         <h4>${row.shop_name || "Unknown"}</h4>
                     </div>
                     <div class="shop-analytics-stats">
-                        <div><span class="stat-label">Revenue</span><span class="stat-value">$${(parseFloat(row.total_revenue)||0).toLocaleString()}</span></div>
-                        <div><span class="stat-label">Transactions</span><span class="stat-value">${(parseFloat(row.total_transactions)||0).toLocaleString()}</span></div>
-                        <div><span class="stat-label">Customers</span><span class="stat-value">${(parseFloat(row.unique_customers)||0).toLocaleString()}</span></div>
+                        <div class="shop-stat">
+                            <i class="fas fa-dollar-sign"></i>
+                            <div class="shop-stat-content">
+                                <span class="shop-stat-value">$${(parseFloat(row.total_revenue)||0).toLocaleString()}</span>
+                                <span class="shop-stat-label">Revenue</span>
+                            </div>
+                        </div>
+                        <div class="shop-stat">
+                            <i class="fas fa-shopping-cart"></i>
+                            <div class="shop-stat-content">
+                                <span class="shop-stat-value">${(parseFloat(row.total_transactions)||0).toLocaleString()}</span>
+                                <span class="shop-stat-label">Transactions</span>
+                            </div>
+                        </div>
+                        <div class="shop-stat">
+                            <i class="fas fa-users"></i>
+                            <div class="shop-stat-content">
+                                <span class="shop-stat-value">${(parseFloat(row.unique_customers)||0).toLocaleString()}</span>
+                                <span class="shop-stat-label">Customers</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="shop-analytics-footer">
                         <button class="action-btn analytics" data-shop-name="${row.shop_name}">
-                            <i class="fas fa-chart-bar"></i> View Details
+                            <i class="fas fa-chart-bar"></i> View Full Analytics
                         </button>
                     </div>
                 </div>
             `);
         });
+        container.append(grid);
     }
 
     // ── Analytics detail modal (single shop) ──────────────────
@@ -800,7 +828,7 @@ $(function() {
         }));
 
         const revenueData = (analytics.recentRevenue||[]).map(r => ({
-            date: r.date,
+            date: formatAnalyticsDate(r.date),
             total_revenue: "$" + (parseFloat(r.total_revenue)||0).toLocaleString(),
             total_transactions: r.total_transactions
         }));
