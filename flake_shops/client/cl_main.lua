@@ -293,7 +293,8 @@ function OpenShopMenu(zone)
         currencies = currencies,
         currencyLabel = currencyLabel,
         imageBaseUrl = Config.InventoryImgUrl,
-        shopLogo = shopLogo
+        shopLogo = shopLogo,
+        uiColor = Config.UiColor or "#f59e0b"
     })
 
     cart = {}

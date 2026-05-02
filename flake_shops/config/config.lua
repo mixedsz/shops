@@ -1,6 +1,10 @@
 Config = {}
 Config.Debug = false  -- Set to true to enable debug messages
 
+-- UI accent color — changes the main highlight color in both the Shop UI
+-- and the ShopsCreator admin panel. Accepts any CSS hex color (e.g. "#e74c3c").
+Config.UiColor = "#f59e0b"
+
 -- Admin Groups (for ESX framework)
 Config.AdminGroups = {
     'management',

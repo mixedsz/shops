@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+:root {
+    --accent:       var(--accent);
+    --accent-dark:  var(--accent-dark);
+    --accent-light: #fbbf24;
+    --accent-rgb:   245, 158, 11;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -177,9 +184,9 @@ body {
 }
 
 .image:hover {
-    border-color: #f59e0b;
+    border-color: var(--accent);
     transform: translateY(-3px);
-    box-shadow: 0 8px 28px rgba(245, 158, 11, 0.18);
+    box-shadow: 0 8px 28px rgba(var(--accent-rgb), 0.18);
 }
 
 .itemimg {
@@ -278,7 +285,7 @@ body {
 }
 
 #cartCount {
-    color: #f59e0b;
+    color: var(--accent);
     font-weight: 700;
 }
 
@@ -395,7 +402,7 @@ input[type="text"] {
 
 input[type="text"].textareas:focus,
 input[type="text"]:focus {
-    border-color: #f59e0b;
+    border-color: var(--accent);
 }
 
 /* ---- Buy section ---- */
@@ -433,7 +440,7 @@ input[type="text"]:focus {
 .purchase {
     width: 100%;
     padding: 11px 16px;
-    background: #f59e0b;
+    background: var(--accent);
     color: #0d0d0d;
     border: none;
     border-radius: 8px;
@@ -449,7 +456,7 @@ input[type="text"]:focus {
 }
 
 .purchase:hover {
-    background: #d97706;
+    background: var(--accent-dark);
     transform: translateY(-1px);
 }
 
@@ -497,7 +504,7 @@ input[type="text"]:focus {
 
 .shop-notification.success { border-color: #10b981; }
 .shop-notification.error   { border-color: #ef4444; }
-.shop-notification.warning { border-color: #f59e0b; }
+.shop-notification.warning { border-color: var(--accent); }
 .shop-notification.info    { border-color: #3b82f6; }
 
 .shop-notif-icon {
@@ -514,7 +521,7 @@ input[type="text"]:focus {
 
 .shop-notification.success .shop-notif-icon { background: rgba(16,185,129,.18); color: #10b981; }
 .shop-notification.error   .shop-notif-icon { background: rgba(239,68,68,.18);  color: #ef4444; }
-.shop-notification.warning .shop-notif-icon { background: rgba(245,158,11,.18); color: #f59e0b; }
+.shop-notification.warning .shop-notif-icon { background: rgba(var(--accent-rgb),.18); color: var(--accent); }
 .shop-notification.info    .shop-notif-icon { background: rgba(59,130,246,.18); color: #3b82f6; }
 
 .shop-notif-msg {

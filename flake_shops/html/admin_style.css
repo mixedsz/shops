@@ -1,3 +1,10 @@
+:root {
+    --accent:       var(--accent);
+    --accent-dark:  var(--accent-dark);
+    --accent-light: var(--accent-light);
+    --accent-rgb:   245, 158, 11;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -79,7 +86,7 @@ body {
 .theme-toggle {
     width: 40px;
     height: 40px;
-    background: #f59e0b;
+    background: var(--accent);
     border: none;
     border-radius: 50%;
     display: flex;
@@ -93,15 +100,15 @@ body {
 
 .theme-toggle:hover {
     transform: scale(1.1);
-    background: #d97706;
+    background: var(--accent-dark);
 }
 
 .theme-toggle.light {
-    background: #fbbf24;
+    background: var(--accent-light);
 }
 
 .theme-toggle.light:hover {
-    background: #f59e0b;
+    background: var(--accent);
 }
 
 #sidebar-nav {
@@ -224,7 +231,7 @@ body {
     height: 32px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #f59e0b;
+    border: 2px solid var(--accent);
 }
 
 .user-info {
@@ -534,7 +541,7 @@ body {
 .tab-btn.active {
     color: #fff;
     background: rgba(255, 255, 255, 0.08);
-    border-bottom-color: #f59e0b;
+    border-bottom-color: var(--accent);
 }
 
 .modal-tab-content {
@@ -947,7 +954,7 @@ input[type="checkbox"] {
     margin-bottom: 0;
 }
 
-#item-search:focus { border-color: #f59e0b; }
+#item-search:focus { border-color: var(--accent); }
 #item-search::placeholder { color: #4b5563; }
 
 .isel-count-badge {
@@ -976,7 +983,7 @@ input[type="checkbox"] {
     width: 48px;
     height: 48px;
     border: 4px solid #2a2a2a;
-    border-top-color: #f59e0b;
+    border-top-color: var(--accent);
     border-radius: 50%;
     margin: 0 auto;
     animation: spin 1s linear infinite;
@@ -1024,12 +1031,12 @@ input[type="checkbox"] {
 }
 
 .vs-card.selected {
-    border-color: #f59e0b;
+    border-color: var(--accent);
     background: #1c1810;
-    box-shadow: 0 0 0 1px rgba(245,158,11,.25);
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb),.25);
 }
 
-.vs-card.selected:hover { border-color: #fbbf24; }
+.vs-card.selected:hover { border-color: var(--accent-light); }
 
 /* Check bubble */
 .vs-check {
@@ -1053,8 +1060,8 @@ input[type="checkbox"] {
 }
 
 .vs-check.checked {
-    background: #f59e0b;
-    border-color: #f59e0b;
+    background: var(--accent);
+    border-color: var(--accent);
     color: #000;
 }
 
@@ -1142,8 +1149,8 @@ input[type="checkbox"] {
     font-weight: 700;
 }
 
-.vs-bar-pill i { color: #f59e0b; }
-#vs-selected-count { color: #f59e0b; font-size: 15px; }
+.vs-bar-pill i { color: var(--accent); }
+#vs-selected-count { color: var(--accent); font-size: 15px; }
 
 .vs-clear-btn {
     padding: 8px 14px;
@@ -1164,7 +1171,7 @@ input[type="checkbox"] {
 
 .vs-confirm-btn {
     padding: 10px 24px;
-    background: #f59e0b;
+    background: var(--accent);
     border: none;
     border-radius: 10px;
     color: #0d0d0d;
@@ -1178,7 +1185,7 @@ input[type="checkbox"] {
     letter-spacing: .2px;
 }
 
-.vs-confirm-btn:hover:not(.disabled) { background: #fbbf24; transform: translateY(-1px); }
+.vs-confirm-btn:hover:not(.disabled) { background: var(--accent-light); transform: translateY(-1px); }
 
 .vs-confirm-btn.disabled {
     background: #2a2a2a;
@@ -1196,7 +1203,7 @@ body.light-theme #item-search::placeholder { color: #9ca3af; }
 body.light-theme .isel-count-badge { background: #f5f5f5; border-color: #e0e0e0; color: #6b7280; }
 body.light-theme .vs-card { background: #fafafa; border-color: #e5e7eb; }
 body.light-theme .vs-card:hover { background: #f3f4f6; border-color: #d1d5db; }
-body.light-theme .vs-card.selected { background: #fffbeb; border-color: #f59e0b; }
+body.light-theme .vs-card.selected { background: #fffbeb; border-color: var(--accent); }
 body.light-theme .vs-label { color: #111; }
 body.light-theme .vs-name { background: #e9eaec; color: #6b7280; }
 body.light-theme .vs-img-wrap { background: #eee; border-color: #ddd; }
@@ -1313,7 +1320,7 @@ body.light-theme .vs-confirm-btn.disabled { background: #e5e7eb; color: #9ca3af;
 }
 
 .notification.warning {
-    border-color: #f59e0b;
+    border-color: var(--accent);
 }
 
 .notification.info {
@@ -1343,8 +1350,8 @@ body.light-theme .vs-confirm-btn.disabled { background: #e5e7eb; color: #9ca3af;
 }
 
 .notification.warning .notification-icon {
-    background: rgba(245, 158, 11, 0.2);
-    color: #f59e0b;
+    background: rgba(var(--accent-rgb), 0.2);
+    color: var(--accent);
 }
 
 .notification.info .notification-icon {
@@ -1515,7 +1522,7 @@ body.light-theme .vs-confirm-btn.disabled { background: #e5e7eb; color: #9ca3af;
 }
 
 .shop-stat i {
-    color: #f59e0b;
+    color: var(--accent);
     font-size: 18px;
     width: 24px;
     text-align: center;
@@ -1798,7 +1805,7 @@ body.light-theme .tab-btn:hover {
 body.light-theme .tab-btn.active {
     color: #000;
     background: rgba(0, 0, 0, 0.08);
-    border-bottom-color: #f59e0b;
+    border-bottom-color: var(--accent);
 }
 
 body.light-theme .section-icon {

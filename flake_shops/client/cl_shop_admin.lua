@@ -109,7 +109,8 @@ RegisterCommand('shopscreator', function()
             editMode = false,
             playerName = playerInfo.playerName,
             playerId = playerInfo.playerId,
-            playerAvatar = playerInfo.playerAvatar
+            playerAvatar = playerInfo.playerAvatar,
+            uiColor = Config.UiColor or "#f59e0b"
         })
     end)
 end, false)
