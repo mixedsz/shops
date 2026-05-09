@@ -581,7 +581,12 @@
                 <!-- Item grade requirements -->
                 <div class="boss-section">
                     <h3><i class="fas fa-shield-alt"></i> Item Grade Requirements</h3>
-                    <p style="color:#6b7280;font-size:12px;margin-bottom:12px;">Minimum job grade required to purchase each item. 0 = available to all grades.</p>
+                    <p style="color:#6b7280;font-size:12px;margin-bottom:8px;">Set the minimum rank required to purchase each item. Grade 0 = any rank.</p>
+                    <!-- Grade reference legend (populated by JS) -->
+                    <div id="boss-grade-legend-wrap" style="display:none;margin-bottom:12px;">
+                        <p style="color:#9ca3af;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Job Ranks</p>
+                        <div id="boss-grade-legend" class="boss-grade-legend-row"></div>
+                    </div>
                     <div id="boss-items-list"></div>
                 </div>
             </div>

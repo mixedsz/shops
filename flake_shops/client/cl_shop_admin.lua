@@ -339,7 +339,7 @@ RegisterCommand('shopboss', function()
 end, false)
 
 RegisterNetEvent('flake_shops:receiveBossMenu')
-AddEventHandler('flake_shops:receiveBossMenu', function(shops, societyBalance, jobName)
+AddEventHandler('flake_shops:receiveBossMenu', function(shops, societyBalance, jobName, grades)
     local playerInfo = GetPlayerInfo()
     SetNuiFocus(true, true)
     SendNUIMessage({
@@ -347,6 +347,7 @@ AddEventHandler('flake_shops:receiveBossMenu', function(shops, societyBalance, j
         shops          = shops,
         societyBalance = societyBalance,
         jobName        = jobName,
+        grades         = grades or {},
         playerName     = playerInfo.playerName,
         playerId       = playerInfo.playerId,
         uiColor        = Config.UiColor or "#f59e0b"

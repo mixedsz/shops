@@ -973,13 +973,34 @@ $(function() {
     let bossShops    = [];
     let bossShopIdx  = 0;  // currently selected shop index
 
+    let bossJobGrades = []; // [{grade: N, label: "..."}]
+
+    function gradeLabelFor(gradeNum) {
+        for (let i = 0; i < bossJobGrades.length; i++) {
+            if (bossJobGrades[i].grade === gradeNum) return bossJobGrades[i].label;
+        }
+        return gradeNum === 0 ? "Any Rank" : "Grade " + gradeNum;
+    }
+
     function openBossMenu(data) {
         if (data.uiColor) applyAccentColor(data.uiColor);
         bossShops = data.shops || [];
         if (!bossShops.length) return;
 
+        bossJobGrades = data.grades || [];
         bossShopIdx = 0;
         $("#boss-job-label").text((data.jobName || "").toUpperCase());
+
+        // Render grade reference legend
+        const legend = $("#boss-grade-legend").empty();
+        if (bossJobGrades.length > 0) {
+            bossJobGrades.forEach(function(g) {
+                legend.append(`<span class="boss-grade-pill">${g.grade} — ${g.label}</span>`);
+            });
+            $("#boss-grade-legend-wrap").show();
+        } else {
+            $("#boss-grade-legend-wrap").hide();
+        }
 
         // Multi-shop selector
         if (bossShops.length > 1) {
@@ -1016,13 +1037,25 @@ $(function() {
         const list = $("#boss-items-list").empty();
         (shop.Items || []).forEach(function(item) {
             const grade = item.minGrade || 0;
+
+            // Build a grade dropdown from the known grades
+            let gradeOptions = `<option value="0">0 — Any Rank</option>`;
+            bossJobGrades.forEach(function(g) {
+                const sel = g.grade === grade ? " selected" : "";
+                gradeOptions += `<option value="${g.grade}"${sel}>${g.grade} — ${g.label}</option>`;
+            });
+            // If no grades loaded, fall back to number input
+            const gradeControl = bossJobGrades.length > 0
+                ? `<select class="boss-grade-input" data-item="${item.item}">${gradeOptions}</select>`
+                : `<input type="number" class="boss-grade-input" value="${grade}" min="0" max="20" data-item="${item.item}" />`;
+
+            const gradeDisplay = gradeLabelFor(grade);
             list.append(`
                 <div class="boss-item-row" data-item="${item.item}">
                     <span class="boss-item-label">${item.label}</span>
                     <div class="boss-item-grade">
-                        <label style="color:#6b7280;font-size:11px;">Min Grade</label>
-                        <input type="number" class="boss-grade-input" value="${grade}" min="0" max="20"
-                               data-item="${item.item}" style="width:64px;text-align:center;" />
+                        <label class="boss-grade-hint">Min Rank</label>
+                        ${gradeControl}
                     </div>
                 </div>
             `);

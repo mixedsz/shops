@@ -2401,8 +2401,41 @@ body.light-theme .item-card.selectable:hover {
 }
 
 .boss-grade-input {
-    width: 64px !important;
-    padding: 6px 8px !important;
+    padding: 6px 10px !important;
     text-align: center;
-    font-size: 13px !important;
+    font-size: 12px !important;
+    background: #1a1a1a !important;
+    border: 1px solid #2a2a2a !important;
+    border-radius: 6px !important;
+    color: #e5e7eb !important;
+    font-family: inherit !important;
+    cursor: pointer;
+    min-width: 150px;
+    max-width: 200px;
+}
+
+.boss-grade-hint {
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Grade reference legend pills */
+.boss-grade-legend-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.boss-grade-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
 }

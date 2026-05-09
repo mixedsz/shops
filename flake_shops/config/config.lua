@@ -80,12 +80,12 @@ Config.JobThemes = {
     },
     ambulance = {
         theme       = "ems",
-        accentColor = "#10b981",
+        accentColor = "#ef4444",
         label       = "EMS MEDICAL SUPPLY",
     },
     ems = {
         theme       = "ems",
-        accentColor = "#10b981",
+        accentColor = "#ef4444",
         label       = "EMS MEDICAL SUPPLY",
     },
 }

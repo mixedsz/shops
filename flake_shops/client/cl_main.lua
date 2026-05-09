@@ -22,6 +22,17 @@ local isPickupTextUIShown = false
 -- Check if ox_lib is available
 local hasOxLib = GetResourceState('ox_lib') ~= 'missing'
 
+-- Returns true if the local player has the given job (or if no job is required)
+local function PlayerHasJob(jobName)
+    if not jobName or jobName == "" then return true end
+    if QBCore then
+        return PlayerData and PlayerData.job and PlayerData.job.name == jobName
+    elseif ESX then
+        return PlayerData and PlayerData.job and PlayerData.job.name == jobName
+    end
+    return false
+end
+
 -- Helper function for showing TextUI
 local function ShowTextUI(text)
     if hasOxLib then
@@ -107,6 +118,10 @@ function RefreshBlips()
 
     for k, v in pairs(Config.Shops) do
         if v.Blip then
+            -- Hide job-owned shop blips from players who don't have that job
+            if v.RequireJob and v.OwnerJob and v.OwnerJob ~= "" and not PlayerHasJob(v.OwnerJob) then
+                goto continue_blip
+            end
             for i = 1, #v.Pos do
                 local blip = AddBlipForCoord(v.Pos[i])
                 SetBlipSprite(blip, v.Blip.sprite)
@@ -119,6 +134,7 @@ function RefreshBlips()
                 EndTextCommandSetBlipName(blip)
                 table.insert(blips, blip)
             end
+            ::continue_blip::
         end
     end
 end
@@ -208,6 +224,10 @@ Citizen.CreateThread(function()
         inZone = false
 
         for k, v in pairs(Config.Shops) do
+            -- Invisible to players who don't have the required job
+            if v.RequireJob and v.OwnerJob and v.OwnerJob ~= "" and not PlayerHasJob(v.OwnerJob) then
+                goto continue_shop
+            end
             for i = 1, #v.Pos do
                 local distance = #(coords - v.Pos[i])
                 local interactionDistance = v.UsePed and 2.0 or Config.Size.x
@@ -235,6 +255,7 @@ Citizen.CreateThread(function()
                     end
                 end
             end
+            ::continue_shop::
         end
 
         -- Check if we should show the text UI

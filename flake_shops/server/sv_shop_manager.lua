@@ -47,6 +47,39 @@ function AddSocietyMoney(jobName, amount)
     end
 end
 
+-- Returns all grades for a job as [{grade=N, label="..."}] sorted ascending
+local function GetJobGrades(jobName, cb)
+    local grades = {}
+    if QBCore then
+        local jobData = QBCore.Shared.Jobs and QBCore.Shared.Jobs[jobName]
+        if jobData and jobData.grades then
+            for gradeLevel, gradeData in pairs(jobData.grades) do
+                table.insert(grades, {
+                    grade = tonumber(gradeLevel),
+                    label = gradeData.name or ("Grade " .. gradeLevel)
+                })
+            end
+            table.sort(grades, function(a, b) return a.grade < b.grade end)
+        end
+        cb(grades)
+    elseif ESX then
+        MySQL.Async.fetchAll(
+            'SELECT grade, label FROM job_grades WHERE job_name = @job ORDER BY grade ASC',
+            {['@job'] = jobName},
+            function(rows)
+                if rows then
+                    for _, r in ipairs(rows) do
+                        table.insert(grades, {grade = r.grade, label = r.label or ("Grade " .. r.grade)})
+                    end
+                end
+                cb(grades)
+            end
+        )
+    else
+        cb(grades)
+    end
+end
+
 -- Returns society balance for ESX society (async, fires cb with number)
 local function GetSocietyBalance(jobName, cb)
     local res = Config.SocietyResource or ""
@@ -397,9 +430,11 @@ AddEventHandler('flake_shops:requestBossMenu', function()
                 s.analytics = analyticsMap[s.name] or { revenue = 0, transactions = 0 }
             end
 
-            -- Get society balance (async; send data when done)
+            -- Get society balance then job grades before sending the menu
             GetSocietyBalance(jobName, function(balance)
-                TriggerClientEvent('flake_shops:receiveBossMenu', src, ownedShops, balance, jobName)
+                GetJobGrades(jobName, function(grades)
+                    TriggerClientEvent('flake_shops:receiveBossMenu', src, ownedShops, balance, jobName, grades)
+                end)
             end)
         end
     )
