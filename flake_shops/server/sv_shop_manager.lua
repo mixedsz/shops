@@ -17,23 +17,47 @@ end)
 -- Global helpers (used by sv_main.lua and boss menu below)
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Returns jobName, gradeLevel (number), isBoss (bool)
+-- Returns jobName, gradeLevel (number)
 function GetPlayerJobInfo(source)
     if QBCore then
         local Player = QBCore.Functions.GetPlayer(source)
         if Player then
             local job   = Player.PlayerData.job
             local grade = job.grade and (job.grade.level or 0) or 0
-            return job.name, grade, (job.isboss == true)
+            return job.name, grade
         end
     elseif ESX then
         local xPlayer = ESX.GetPlayerFromId(source)
         if xPlayer then
-            local isBoss = (xPlayer.job.grade_name == "boss") or (xPlayer.job.grade >= 4)
-            return xPlayer.job.name, (xPlayer.job.grade or 0), isBoss
+            return xPlayer.job.name, (xPlayer.job.grade or 0)
         end
     end
-    return "", 0, false
+    return "", 0
+end
+
+-- Async: calls cb(true) if the player is at the highest grade for their job.
+-- This correctly handles custom job names (not just "boss") and grade 0 being top rank.
+local function IsJobBoss(source, jobName, gradeLevel, cb)
+    GetJobGrades(jobName, function(grades)
+        if #grades == 0 then
+            -- No grade data available — fall back to QBCore isboss flag only
+            if QBCore then
+                local Player = QBCore.Functions.GetPlayer(source)
+                if Player and Player.PlayerData.job.isboss == true then
+                    cb(true)
+                    return
+                end
+            end
+            cb(false)
+            return
+        end
+        -- Find the highest grade number in the job
+        local maxGrade = grades[1].grade
+        for _, g in ipairs(grades) do
+            if g.grade > maxGrade then maxGrade = g.grade end
+        end
+        cb(gradeLevel >= maxGrade)
+    end)
 end
 
 -- Credit the owning job's society account after a sale
@@ -391,12 +415,18 @@ end)
 RegisterNetEvent('flake_shops:requestBossMenu')
 AddEventHandler('flake_shops:requestBossMenu', function()
     local src = source
-    local jobName, _, isBoss = GetPlayerJobInfo(src)
+    local jobName, gradeLevel = GetPlayerJobInfo(src)
 
-    if not isBoss then
-        TriggerClientEvent('flake_shopsCL:notify', src, "You must be a boss to access the shop panel!", "error")
+    if jobName == "" then
+        TriggerClientEvent('flake_shopsCL:notify', src, "Could not detect your job!", "error")
         return
     end
+
+    IsJobBoss(src, jobName, gradeLevel, function(isBoss)
+        if not isBoss then
+            TriggerClientEvent('flake_shopsCL:notify', src, "You must be the highest rank in your job to access the boss menu!", "error")
+            return
+        end
 
     -- Find every shop owned by this job
     local ownedShops = {}
@@ -438,47 +468,51 @@ AddEventHandler('flake_shops:requestBossMenu', function()
             end)
         end
     )
+    end) -- IsJobBoss callback
 end)
 
 -- Boss saves society% and per-item grade requirements for their own shop
 RegisterNetEvent('flake_shops:saveBossShopSettings')
 AddEventHandler('flake_shops:saveBossShopSettings', function(data)
     local src = source
-    local jobName, _, isBoss = GetPlayerJobInfo(src)
+    local jobName, gradeLevel = GetPlayerJobInfo(src)
 
-    if not isBoss then return end
     if not data or not data.shopName then return end
 
-    local shopName = data.shopName
-    if not Shops[shopName] or Shops[shopName].OwnerJob ~= jobName then
-        TriggerClientEvent('flake_shopsCL:notify', src, "You don't own this shop!", "error")
-        return
-    end
+    IsJobBoss(src, jobName, gradeLevel, function(isBoss)
+        if not isBoss then return end
 
-    -- Only allow bosses to adjust SocietyPercent and item minGrade values
-    if data.societyPercent ~= nil then
-        Shops[shopName].SocietyPercent = math.max(0, math.min(100, tonumber(data.societyPercent) or 0))
-    end
+        local shopName = data.shopName
+        if not Shops[shopName] or Shops[shopName].OwnerJob ~= jobName then
+            TriggerClientEvent('flake_shopsCL:notify', src, "You don't own this shop!", "error")
+            return
+        end
 
-    if data.items and Shops[shopName].Items then
-        local gradeMap = {}
-        for _, upd in ipairs(data.items) do gradeMap[upd.item] = tonumber(upd.minGrade) or 0 end
-        for _, shopItem in ipairs(Shops[shopName].Items) do
-            if gradeMap[shopItem.item] ~= nil then
-                shopItem.minGrade = gradeMap[shopItem.item]
+        -- Only allow bosses to adjust SocietyPercent and item minGrade values
+        if data.societyPercent ~= nil then
+            Shops[shopName].SocietyPercent = math.max(0, math.min(100, tonumber(data.societyPercent) or 0))
+        end
+
+        if data.items and Shops[shopName].Items then
+            local gradeMap = {}
+            for _, upd in ipairs(data.items) do gradeMap[upd.item] = tonumber(upd.minGrade) or 0 end
+            for _, shopItem in ipairs(Shops[shopName].Items) do
+                if gradeMap[shopItem.item] ~= nil then
+                    shopItem.minGrade = gradeMap[shopItem.item]
+                end
             end
         end
-    end
 
-    local copy = ShopToSafeTable(shopName, Shops[shopName])
-    MySQL.Async.execute('UPDATE shops SET shop_data = @d WHERE shop_name = @n', {
-        ['@n'] = shopName, ['@d'] = json.encode(copy)
-    }, function(affected)
-        if affected and affected > 0 then
-            TriggerClientEvent('flake_shopsCL:notify', src, "Shop settings saved!", "success")
-            LoadShopsFromDatabase()
-        else
-            TriggerClientEvent('flake_shopsCL:notify', src, "Failed to save settings!", "error")
-        end
-    end)
+        local copy = ShopToSafeTable(shopName, Shops[shopName])
+        MySQL.Async.execute('UPDATE shops SET shop_data = @d WHERE shop_name = @n', {
+            ['@n'] = shopName, ['@d'] = json.encode(copy)
+        }, function(affected)
+            if affected and affected > 0 then
+                TriggerClientEvent('flake_shopsCL:notify', src, "Shop settings saved!", "success")
+                LoadShopsFromDatabase()
+            else
+                TriggerClientEvent('flake_shopsCL:notify', src, "Failed to save settings!", "error")
+            end
+        end)
+    end) -- IsJobBoss callback
 end)
