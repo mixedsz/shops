@@ -123,7 +123,7 @@ end)
 
 -- NUI Callbacks
 RegisterNUICallback('saveShop', function(data, cb)
-    TriggerServerEvent('flake_shops:saveShop', data.shopData, data.editMode)
+    TriggerServerEvent('flake_shops:saveShop', data.shopData, data.editMode, data.originalName)
     cb('ok')
 end)
 

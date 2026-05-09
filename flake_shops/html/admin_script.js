@@ -346,7 +346,7 @@ $(function() {
     }
 
     function loadShopData(shopData) {
-        $("#shop-name").val(shopData.name).prop("disabled", true);
+        $("#shop-name").val(shopData.name);
         $("#shop-logo").val(shopData.ShopLogo || "blackmarket.png");
         if (shopData.Pos) shopData.Pos.forEach(pos => addPositionEntry(pos.x, pos.y, pos.z));
         if (shopData.Items) shopData.Items.forEach(item => addItemEntry(item.label, item.item, item.price));
@@ -478,7 +478,7 @@ $(function() {
             };
         }
 
-        $.post("https://flake_shops/saveShop", JSON.stringify({ shopData, editMode }), function() {
+        $.post("https://flake_shops/saveShop", JSON.stringify({ shopData, editMode, originalName: currentShopId }), function() {
             showNotification(`Saving shop "${shopName}"...`, "info");
             $("#shop-modal").fadeOut(200);
             // Table will refresh automatically via the shopsUpdated broadcast

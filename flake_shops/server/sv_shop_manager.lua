@@ -144,27 +144,28 @@ end)
 
 -- Save shop to database
 RegisterNetEvent('flake_shops:saveShop')
-AddEventHandler('flake_shops:saveShop', function(shopData, editMode)
+AddEventHandler('flake_shops:saveShop', function(shopData, editMode, originalName)
     local src = source
-    
+
     if not IsPlayerAdmin(src) then
         TriggerClientEvent('flake_shopsCL:notify', src, "You don't have permission to do this!", "error")
         return
     end
-    
+
     if not shopData or not shopData.name then
         TriggerClientEvent('flake_shopsCL:notify', src, "Invalid shop data!", "error")
         return
     end
-    
+
     local shopName = shopData.name
-    
+    local lookupName = (editMode and originalName and originalName ~= "") and originalName or shopName
+
     -- Convert vector3 positions to table format for JSON
     local shopDataCopy = {}
     for k, v in pairs(shopData) do
         shopDataCopy[k] = v
     end
-    
+
     if shopDataCopy.Pos then
         local positions = {}
         for i, pos in ipairs(shopDataCopy.Pos) do
@@ -172,22 +173,48 @@ AddEventHandler('flake_shops:saveShop', function(shopData, editMode)
         end
         shopDataCopy.Pos = positions
     end
-    
+
     local shopDataJson = json.encode(shopDataCopy)
-    
+
     if editMode then
-        -- Update existing shop
-        MySQL.Async.execute('UPDATE shops SET shop_data = @shop_data WHERE shop_name = @shop_name', {
-            ['@shop_name'] = shopName,
-            ['@shop_data'] = shopDataJson
-        }, function(affectedRows)
-            if affectedRows > 0 then
-                TriggerClientEvent('flake_shopsCL:notify', src, "Shop updated successfully!", "success")
-                LoadShopsFromDatabase()
-            else
-                TriggerClientEvent('flake_shopsCL:notify', src, "Failed to update shop!", "error")
-            end
-        end)
+        local nameChanged = originalName and originalName ~= "" and originalName ~= shopName
+
+        if nameChanged then
+            -- Name changed: check the new name is not already taken
+            MySQL.Async.fetchScalar('SELECT COUNT(*) FROM shops WHERE shop_name = @shop_name', {
+                ['@shop_name'] = shopName
+            }, function(count)
+                if count > 0 then
+                    TriggerClientEvent('flake_shopsCL:notify', src, "A shop with this name already exists!", "error")
+                    return
+                end
+                MySQL.Async.execute('UPDATE shops SET shop_name = @new_name, shop_data = @shop_data WHERE shop_name = @old_name', {
+                    ['@new_name'] = shopName,
+                    ['@old_name'] = originalName,
+                    ['@shop_data'] = shopDataJson
+                }, function(affectedRows)
+                    if affectedRows > 0 then
+                        TriggerClientEvent('flake_shopsCL:notify', src, "Shop renamed and updated successfully!", "success")
+                        LoadShopsFromDatabase()
+                    else
+                        TriggerClientEvent('flake_shopsCL:notify', src, "Failed to rename shop!", "error")
+                    end
+                end)
+            end)
+        else
+            -- Same name, update data only
+            MySQL.Async.execute('UPDATE shops SET shop_data = @shop_data WHERE shop_name = @shop_name', {
+                ['@shop_name'] = lookupName,
+                ['@shop_data'] = shopDataJson
+            }, function(affectedRows)
+                if affectedRows > 0 then
+                    TriggerClientEvent('flake_shopsCL:notify', src, "Shop updated successfully!", "success")
+                    LoadShopsFromDatabase()
+                else
+                    TriggerClientEvent('flake_shopsCL:notify', src, "Failed to update shop!", "error")
+                end
+            end)
+        end
     else
         -- Check if shop already exists
         MySQL.Async.fetchScalar('SELECT COUNT(*) FROM shops WHERE shop_name = @shop_name', {
@@ -197,7 +224,7 @@ AddEventHandler('flake_shops:saveShop', function(shopData, editMode)
                 TriggerClientEvent('flake_shopsCL:notify', src, "A shop with this name already exists!", "error")
                 return
             end
-            
+
             -- Insert new shop
             MySQL.Async.execute('INSERT INTO shops (shop_name, shop_data) VALUES (@shop_name, @shop_data)', {
                 ['@shop_name'] = shopName,
