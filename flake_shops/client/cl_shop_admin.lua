@@ -153,11 +153,11 @@ end)
 RegisterNUICallback('getCurrentPosition', function(data, cb)
     local playerPed = PlayerPedId()
     local coords = GetEntityCoords(playerPed)
-    cb({
-        x = coords.x,
-        y = coords.y,
-        z = coords.z
-    })
+    cb({ x = coords.x, y = coords.y, z = coords.z })
+end)
+
+RegisterNUICallback('getCurrentHeading', function(data, cb)
+    cb({ heading = GetEntityHeading(PlayerPedId()) })
 end)
 
 -- Store items callback
@@ -326,9 +326,39 @@ end)
 -- NUI requests teleport to shop position (Goto button in admin panel)
 RegisterNUICallback('gotoShopPosition', function(data, cb)
     if data and data.x then
-        local ped = PlayerPedId()
-        SetEntityCoords(ped, data.x, data.y, data.z, false, false, false, true)
+        SetEntityCoords(PlayerPedId(), data.x, data.y, data.z, false, false, false, true)
         TriggerEvent('flake_shopsCL:notify', 'Teleported to shop location', 'success')
     end
-    cb({status = 'ok'})
+    cb({ status = 'ok' })
+end)
+
+-- ─── Boss Menu ────────────────────────────────────────────────────────────────
+
+RegisterCommand('shopboss', function()
+    TriggerServerEvent('flake_shops:requestBossMenu')
+end, false)
+
+RegisterNetEvent('flake_shops:receiveBossMenu')
+AddEventHandler('flake_shops:receiveBossMenu', function(shops, societyBalance, jobName)
+    local playerInfo = GetPlayerInfo()
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        type           = "openBossMenu",
+        shops          = shops,
+        societyBalance = societyBalance,
+        jobName        = jobName,
+        playerName     = playerInfo.playerName,
+        playerId       = playerInfo.playerId,
+        uiColor        = Config.UiColor or "#f59e0b"
+    })
+end)
+
+RegisterNUICallback('closeBossMenu', function(data, cb)
+    SetNuiFocus(false, false)
+    cb({ status = 'ok' })
+end)
+
+RegisterNUICallback('saveBossShopSettings', function(data, cb)
+    TriggerServerEvent('flake_shops:saveBossShopSettings', data)
+    cb('ok')
 end)

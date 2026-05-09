@@ -55,6 +55,40 @@ Config.InventoryImgUrl = "ox_inventory/web/images/"  --  QB Inventory = "qb-inve
 -- All shop data is stored in the database
 Config.Shops = {}
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Player-Owned / Job Shop Settings
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Resource used to credit job society accounts after a sale.
+-- Supported: "esx_society" (ESX), "qb-management" (QBCore), or "" to disable.
+Config.SocietyResource = "esx_society"
+
+-- Default % of each sale credited to the owning job's society when a new
+-- player-owned shop is created. Bosses can change this per-shop in their
+-- boss menu.
+Config.DefaultSocietyPercent = 20
+
+-- Job-specific UI themes applied when a shop's OwnerJob matches a key here.
+-- theme: CSS class suffix applied to #wrapper ("police" → "police-theme")
+-- accentColor: overrides Config.UiColor for that shop's UI
+-- label: optional header prefix shown in the shop UI
+Config.JobThemes = {
+    police = {
+        theme       = "police",
+        accentColor = "#3b82f6",
+        label       = "LSPD ARMORY",
+    },
+    ambulance = {
+        theme       = "ems",
+        accentColor = "#10b981",
+        label       = "EMS MEDICAL SUPPLY",
+    },
+    ems = {
+        theme       = "ems",
+        accentColor = "#10b981",
+        label       = "EMS MEDICAL SUPPLY",
+    },
+}
 
 Config.PickUpLocations = {
     [1] = {

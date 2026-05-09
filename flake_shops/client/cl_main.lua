@@ -115,7 +115,7 @@ function RefreshBlips()
                 SetBlipColour(blip, v.Blip.colour)
                 SetBlipAsShortRange(blip, v.Blip.shortRange)
                 BeginTextCommandSetBlipName("STRING")
-                AddTextComponentString(v.Blip.name)
+                AddTextComponentString(v.ShopLabel or v.Blip.name or k)
                 EndTextCommandSetBlipName(blip)
                 table.insert(blips, blip)
             end
@@ -268,33 +268,48 @@ end)
 -- Open Shop Menu
 function OpenShopMenu(zone)
     TriggerEvent('flake_shops:openShop', zone)
-    local items = Config.Shops[zone].Items
+    local shopCfg = Config.Shops[zone]
+    local items = shopCfg.Items
     local currencies = {}
-    local defaultCurrency = Config.Shops[zone].Currency[1] or "cash"
+    local defaultCurrency = shopCfg.Currency[1] or "cash"
     local currencyLabel = Config.CurrencyLabels[defaultCurrency] or defaultCurrency:upper()
-    local shopLogo = Config.Shops[zone].ShopLogo or "blackmarket.png"
+    local shopLogo = shopCfg.ShopLogo or "blackmarket.png"
 
-    -- Add currency information to each item
-    for i, item in ipairs(items) do
-        item.currencyLabel = currencyLabel
+    -- Use ShopLabel as the visible display name (falls back to internal key)
+    local displayName = shopCfg.ShopLabel or zone
+
+    -- Determine themed UI (police / ems / default)
+    local shopTheme = "default"
+    local accentColor = Config.UiColor or "#f59e0b"
+    if Config.JobThemes and shopCfg.OwnerJob and shopCfg.OwnerJob ~= "" then
+        local themeData = Config.JobThemes[shopCfg.OwnerJob]
+        if themeData then
+            shopTheme   = themeData.theme or "default"
+            accentColor = themeData.accentColor or accentColor
+        end
     end
 
+    -- Add currency label to each item
+    for _, item in ipairs(items) do item.currencyLabel = currencyLabel end
+
     -- Prepare currency options for payment
-    for _, currency in ipairs(Config.Shops[zone].Currency) do
+    for _, currency in ipairs(shopCfg.Currency) do
         local label = Config.CurrencyLabels[currency] or currency:upper()
         table.insert(currencies, {name = currency, label = label})
     end
 
     SetNuiFocus(true, true)
     SendNUIMessage({
-        type = "shop",
-        result = items,
-        name = zone,
-        currencies = currencies,
+        type         = "shop",
+        result       = items,
+        name         = displayName,  -- shown in the UI header
+        zone         = zone,         -- internal key sent back on purchase
+        currencies   = currencies,
         currencyLabel = currencyLabel,
         imageBaseUrl = Config.InventoryImgUrl,
-        shopLogo = shopLogo,
-        uiColor = Config.UiColor or "#f59e0b"
+        shopLogo     = shopLogo,
+        shopTheme    = shopTheme,
+        uiColor      = accentColor,
     })
 
     cart = {}

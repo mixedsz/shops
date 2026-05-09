@@ -98,6 +98,8 @@ $(function() {
             allShops = data.shops || [];
             renderShopsTable();
             updateDashboard();
+        } else if (data.type === "openBossMenu") {
+            openBossMenu(data);
         } else if (data.type === "frameworkDetected") {
             detectedFramework = data.framework || "esx";
         } else if (data.type === "analyticsData") {
@@ -309,7 +311,12 @@ $(function() {
 
     function resetForm() {
         $("#shop-name").val("").prop("disabled", false);
+        $("#shop-label").val("");
         $("#shop-logo").val("blackmarket.png");
+        $("#owner-job").val("");
+        $("#require-job").prop("checked", false);
+        $("#society-percent").val(0);
+        $("#society-pct-display").text("0");
         $("#positions-list, #items-list").empty();
         $(".currency-check").prop("checked", false);
         $("#use-pickup, #use-ped, #use-blip").prop("checked", false);
@@ -347,9 +354,15 @@ $(function() {
 
     function loadShopData(shopData) {
         $("#shop-name").val(shopData.name);
+        $("#shop-label").val(shopData.ShopLabel || "");
         $("#shop-logo").val(shopData.ShopLogo || "blackmarket.png");
+        $("#owner-job").val(shopData.OwnerJob || "");
+        $("#require-job").prop("checked", shopData.RequireJob || false);
+        const pct = shopData.SocietyPercent || 0;
+        $("#society-percent").val(pct);
+        $("#society-pct-display").text(pct);
         if (shopData.Pos) shopData.Pos.forEach(pos => addPositionEntry(pos.x, pos.y, pos.z));
-        if (shopData.Items) shopData.Items.forEach(item => addItemEntry(item.label, item.item, item.price));
+        if (shopData.Items) shopData.Items.forEach(item => addItemEntry(item.label, item.item, item.price, item.minGrade || 0));
         if (shopData.Currency) shopData.Currency.forEach(c => $(`.currency-check[value="${c}"]`).prop("checked", true));
         $("#use-pickup").prop("checked", shopData.UsePickup || false);
         $("#use-ped").prop("checked", shopData.UsePed || false);
@@ -386,7 +399,7 @@ $(function() {
         `);
     }
 
-    function addItemEntry(label = "", item = "", price = "") {
+    function addItemEntry(label = "", item = "", price = "", minGrade = 0) {
         itemCounter++;
         $("#items-list").append(`
             <div class="item-entry" data-id="${itemCounter}">
@@ -395,13 +408,21 @@ $(function() {
                 <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
                     <div style="flex:2;min-width:200px;"><label>Item Spawn Name</label>
                         <input type="text" class="item-name" placeholder="e.g., water" value="${item}" style="font-family:'Courier New',monospace;"/></div>
-                    <div style="flex:1;min-width:120px;"><label>Price ($)</label>
+                    <div style="flex:1;min-width:100px;"><label>Price ($)</label>
                         <input type="number" class="item-price" placeholder="100" value="${price}"/></div>
+                    <div style="flex:1;min-width:100px;"><label>Min Grade <span style="color:#6b7280;font-size:11px;">(0=any)</span></label>
+                        <input type="number" class="item-min-grade" placeholder="0" value="${minGrade}" min="0" max="20"/></div>
                     <button class="btn-remove remove-item">Remove</button>
                 </div>
             </div>
         `);
     }
+
+    // Society % slider live label
+    $("#society-percent").on("input", function() {
+        const v = $(this).val();
+        $("#society-pct-display").text(v);
+    });
 
     $("#add-position").on("click", function() { addPositionEntry(); });
     $("#add-current-position").on("click", function() {
@@ -409,6 +430,16 @@ $(function() {
             if (pos && pos.x) { addPositionEntry(pos.x, pos.y, pos.z); showNotification("Current position added!", "success"); }
         });
     });
+
+    $("#use-current-heading").on("click", function() {
+        $.post("https://flake_shops/getCurrentHeading", JSON.stringify({}), function(data) {
+            if (data && data.heading !== undefined) {
+                $("#ped-heading").val(parseFloat(data.heading).toFixed(2));
+                showNotification("Heading set to " + parseFloat(data.heading).toFixed(2) + "°", "success");
+            }
+        });
+    });
+
     $("#add-item").on("click", function() { addItemEntry(); });
 
     $("body").on("click", ".remove-position", function() { $(this).closest(".position-entry").remove(); });
@@ -443,10 +474,11 @@ $(function() {
 
         const items = [];
         $(".item-entry").each(function() {
-            const label = $(this).find(".item-label").val().trim(),
-                  item  = $(this).find(".item-name").val().trim(),
-                  price = parseFloat($(this).find(".item-price").val());
-            if (label && item && !isNaN(price)) items.push({label, item, price});
+            const label    = $(this).find(".item-label").val().trim(),
+                  item     = $(this).find(".item-name").val().trim(),
+                  price    = parseFloat($(this).find(".item-price").val()),
+                  minGrade = parseInt($(this).find(".item-min-grade").val()) || 0;
+            if (label && item && !isNaN(price)) items.push({label, item, price, minGrade});
         });
         if (!items.length) { showNotification("Please add at least one item!", "error"); return; }
 
@@ -454,11 +486,21 @@ $(function() {
         $(".currency-check:checked").each(function() { currencies.push($(this).val()); });
         if (!currencies.length) { showNotification("Please select at least one currency!", "error"); return; }
 
+        const ownerJob       = $("#owner-job").val().trim();
+        const societyPercent = parseInt($("#society-percent").val()) || 0;
+
         const shopData = {
-            name: shopName, Items: items, Pos: positions, Currency: currencies,
-            UsePickup: $("#use-pickup").is(":checked"),
-            UsePed: $("#use-ped").is(":checked"),
-            ShopLogo: $("#shop-logo").val().trim() || "blackmarket.png"
+            name:            shopName,
+            ShopLabel:       $("#shop-label").val().trim() || shopName,
+            Items:           items,
+            Pos:             positions,
+            Currency:        currencies,
+            UsePickup:       $("#use-pickup").is(":checked"),
+            UsePed:          $("#use-ped").is(":checked"),
+            ShopLogo:        $("#shop-logo").val().trim() || "blackmarket.png",
+            OwnerJob:        ownerJob,
+            RequireJob:      ownerJob !== "" && $("#require-job").is(":checked"),
+            SocietyPercent:  societyPercent,
         };
         if (shopData.UsePed) {
             shopData.ShopPed = {
@@ -923,5 +965,106 @@ $(function() {
 
         modal.css("display", "flex").hide().fadeIn(200);
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  BOSS MENU
+    // ══════════════════════════════════════════════════════════════════════════
+
+    let bossShops    = [];
+    let bossShopIdx  = 0;  // currently selected shop index
+
+    function openBossMenu(data) {
+        if (data.uiColor) applyAccentColor(data.uiColor);
+        bossShops = data.shops || [];
+        if (!bossShops.length) return;
+
+        bossShopIdx = 0;
+        $("#boss-job-label").text((data.jobName || "").toUpperCase());
+
+        // Multi-shop selector
+        if (bossShops.length > 1) {
+            const sel = $("#boss-shop-select").empty();
+            bossShops.forEach((s, i) => {
+                sel.append(`<option value="${i}">${s.ShopLabel || s.name}</option>`);
+            });
+            $("#boss-shop-selector").show();
+            sel.off("change").on("change", function() {
+                bossShopIdx = parseInt($(this).val());
+                renderBossShop(bossShops[bossShopIdx], parseFloat(data.societyBalance) || 0);
+            });
+        } else {
+            $("#boss-shop-selector").hide();
+        }
+
+        renderBossShop(bossShops[0], parseFloat(data.societyBalance) || 0);
+        $("#boss-menu").fadeIn(200);
+    }
+
+    function renderBossShop(shop, societyBalance) {
+        const revenue      = parseFloat(shop.analytics && shop.analytics.revenue) || 0;
+        const transactions = parseInt(shop.analytics && shop.analytics.transactions) || 0;
+        const pct          = parseInt(shop.SocietyPercent) || 0;
+
+        $("#boss-revenue").text("$" + revenue.toLocaleString());
+        $("#boss-transactions").text(transactions.toLocaleString());
+        $("#boss-society-balance").text("$" + parseFloat(societyBalance).toLocaleString());
+        $("#boss-society-pct-display").text(pct + "%");
+        $("#boss-society-slider").val(pct);
+        $("#boss-slider-label").text(pct + "%");
+
+        // Render item grade list
+        const list = $("#boss-items-list").empty();
+        (shop.Items || []).forEach(function(item) {
+            const grade = item.minGrade || 0;
+            list.append(`
+                <div class="boss-item-row" data-item="${item.item}">
+                    <span class="boss-item-label">${item.label}</span>
+                    <div class="boss-item-grade">
+                        <label style="color:#6b7280;font-size:11px;">Min Grade</label>
+                        <input type="number" class="boss-grade-input" value="${grade}" min="0" max="20"
+                               data-item="${item.item}" style="width:64px;text-align:center;" />
+                    </div>
+                </div>
+            `);
+        });
+    }
+
+    // Slider live label
+    $("#boss-society-slider").on("input", function() {
+        $("#boss-slider-label").text($(this).val() + "%");
+        $("#boss-society-pct-display").text($(this).val() + "%");
+    });
+
+    // Save boss settings
+    $("#boss-save-btn").on("click", function() {
+        const shop    = bossShops[bossShopIdx];
+        const socPct  = parseInt($("#boss-society-slider").val()) || 0;
+        const items   = [];
+        $(".boss-grade-input").each(function() {
+            items.push({ item: $(this).attr("data-item"), minGrade: parseInt($(this).val()) || 0 });
+        });
+        $.post("https://flake_shops/saveBossShopSettings", JSON.stringify({
+            shopName:       shop.name,
+            societyPercent: socPct,
+            items:          items
+        }), function() {
+            showNotification("Settings saved!", "success");
+            shop.SocietyPercent = socPct;
+            $("#boss-society-pct-display").text(socPct + "%");
+        });
+    });
+
+    // Close boss menu
+    $("#close-boss-menu").on("click", function() {
+        $("#boss-menu").fadeOut(200);
+        $.post("https://flake_shops/closeBossMenu", JSON.stringify({}));
+    });
+
+    document.addEventListener("keyup", function(event) {
+        if (event.which === 27 && $("#boss-menu").is(":visible")) {
+            $("#boss-menu").fadeOut(200);
+            $.post("https://flake_shops/closeBossMenu", JSON.stringify({}));
+        }
+    });
 
 });

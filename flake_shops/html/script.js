@@ -57,6 +57,13 @@ $(function() {
         if (data.type === "shop") {
             if (data.uiColor) applyAccentColor(data.uiColor);
             shopData = data;
+
+            // Apply job-themed CSS class (police / ems / default)
+            $("#wrapper").removeClass("police-theme ems-theme");
+            if (data.shopTheme && data.shopTheme !== "default") {
+                $("#wrapper").addClass(data.shopTheme + "-theme");
+            }
+
             $("#wrapper, #menuwrap, #bg").fadeIn();
             $("#shopname").html(data.name);
             // Use custom logo if provided, otherwise default to blackmarket.png
@@ -245,8 +252,9 @@ $(function() {
                 $("#payment").fadeOut();
                 $("#cart").fadeOut();
 
+                // Use internal zone name (data.zone) for server lookup
                 $.post("https://flake_shops/buyCart", JSON.stringify({
-                    Zone:      shopName,
+                    Zone:      data.zone || data.name,
                     payMethod: paymentMethod,
                     Cart:      cartItems
                 }));

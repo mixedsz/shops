@@ -8,10 +8,71 @@ Citizen.CreateThread(function()
     elseif GetResourceState(Config.ESXgetSharedObject) ~= "missing" then
         ESX = exports[Config.ESXgetSharedObject]:getSharedObject()
     end
-    
+
     -- Load shops from database on startup
     LoadShopsFromDatabase()
 end)
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Global helpers (used by sv_main.lua and boss menu below)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Returns jobName, gradeLevel (number), isBoss (bool)
+function GetPlayerJobInfo(source)
+    if QBCore then
+        local Player = QBCore.Functions.GetPlayer(source)
+        if Player then
+            local job   = Player.PlayerData.job
+            local grade = job.grade and (job.grade.level or 0) or 0
+            return job.name, grade, (job.isboss == true)
+        end
+    elseif ESX then
+        local xPlayer = ESX.GetPlayerFromId(source)
+        if xPlayer then
+            local isBoss = (xPlayer.job.grade_name == "boss") or (xPlayer.job.grade >= 4)
+            return xPlayer.job.name, (xPlayer.job.grade or 0), isBoss
+        end
+    end
+    return "", 0, false
+end
+
+-- Credit the owning job's society account after a sale
+function AddSocietyMoney(jobName, amount)
+    if not jobName or jobName == "" or amount <= 0 then return end
+    local res = Config.SocietyResource or ""
+    if res == "esx_society" and GetResourceState('esx_society') ~= 'missing' then
+        TriggerEvent('esx_society:addMoney', jobName, amount)
+    elseif res == "qb-management" and GetResourceState('qb-management') ~= 'missing' then
+        pcall(function() exports['qb-management']:AddMoney(jobName, amount) end)
+    end
+end
+
+-- Returns society balance for ESX society (async, fires cb with number)
+local function GetSocietyBalance(jobName, cb)
+    local res = Config.SocietyResource or ""
+    if res == "esx_society" and GetResourceState('esx_society') ~= 'missing' then
+        TriggerEvent('esx_society:getSocietyAccount', jobName, function(account)
+            cb(account and account.money or 0)
+        end)
+    else
+        cb(0)
+    end
+end
+
+-- Convert Shops[name] to a JSON-safe table (vector3 → plain tables, name attached)
+local function ShopToSafeTable(name, data)
+    local copy = {}
+    for k, v in pairs(data) do copy[k] = v end
+    if copy.Pos then
+        local positions = {}
+        for _, pos in ipairs(copy.Pos) do
+            table.insert(positions, {x = pos.x, y = pos.y, z = pos.z})
+        end
+        copy.Pos = positions
+    end
+    copy.name = name
+    return copy
+end
 
 -- Check if player is admin
 function IsPlayerAdmin(source)
@@ -285,10 +346,104 @@ RegisterNetEvent('flake_shops:getFramework')
 AddEventHandler('flake_shops:getFramework', function()
     local src = source
     local fw = "esx"
-    if QBCore then
-        fw = "qbcore"
-    elseif ESX then
-        fw = "esx"
-    end
+    if QBCore then fw = "qbcore"
+    elseif ESX then fw = "esx" end
     TriggerClientEvent('flake_shops:receiveFramework', src, fw)
+end)
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Boss Menu  (job bosses only, no server-admin permission needed)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+RegisterNetEvent('flake_shops:requestBossMenu')
+AddEventHandler('flake_shops:requestBossMenu', function()
+    local src = source
+    local jobName, _, isBoss = GetPlayerJobInfo(src)
+
+    if not isBoss then
+        TriggerClientEvent('flake_shopsCL:notify', src, "You must be a boss to access the shop panel!", "error")
+        return
+    end
+
+    -- Find every shop owned by this job
+    local ownedShops = {}
+    for name, data in pairs(Shops) do
+        if data.OwnerJob and data.OwnerJob == jobName then
+            table.insert(ownedShops, ShopToSafeTable(name, data))
+        end
+    end
+
+    if #ownedShops == 0 then
+        TriggerClientEvent('flake_shopsCL:notify', src, "Your job does not own any shops!", "error")
+        return
+    end
+
+    -- Grab analytics totals for each owned shop
+    local shopNames = {}
+    for _, s in ipairs(ownedShops) do table.insert(shopNames, "'" .. s.name .. "'") end
+    local inClause = table.concat(shopNames, ",")
+
+    MySQL.Async.fetchAll(
+        'SELECT shop_name, COALESCE(SUM(total_cost),0) AS revenue, COUNT(*) AS transactions FROM shop_analytics WHERE shop_name IN (' .. inClause .. ') GROUP BY shop_name',
+        {},
+        function(rows)
+            local analyticsMap = {}
+            if rows then
+                for _, r in ipairs(rows) do
+                    analyticsMap[r.shop_name] = { revenue = r.revenue, transactions = r.transactions }
+                end
+            end
+            for _, s in ipairs(ownedShops) do
+                s.analytics = analyticsMap[s.name] or { revenue = 0, transactions = 0 }
+            end
+
+            -- Get society balance (async; send data when done)
+            GetSocietyBalance(jobName, function(balance)
+                TriggerClientEvent('flake_shops:receiveBossMenu', src, ownedShops, balance, jobName)
+            end)
+        end
+    )
+end)
+
+-- Boss saves society% and per-item grade requirements for their own shop
+RegisterNetEvent('flake_shops:saveBossShopSettings')
+AddEventHandler('flake_shops:saveBossShopSettings', function(data)
+    local src = source
+    local jobName, _, isBoss = GetPlayerJobInfo(src)
+
+    if not isBoss then return end
+    if not data or not data.shopName then return end
+
+    local shopName = data.shopName
+    if not Shops[shopName] or Shops[shopName].OwnerJob ~= jobName then
+        TriggerClientEvent('flake_shopsCL:notify', src, "You don't own this shop!", "error")
+        return
+    end
+
+    -- Only allow bosses to adjust SocietyPercent and item minGrade values
+    if data.societyPercent ~= nil then
+        Shops[shopName].SocietyPercent = math.max(0, math.min(100, tonumber(data.societyPercent) or 0))
+    end
+
+    if data.items and Shops[shopName].Items then
+        local gradeMap = {}
+        for _, upd in ipairs(data.items) do gradeMap[upd.item] = tonumber(upd.minGrade) or 0 end
+        for _, shopItem in ipairs(Shops[shopName].Items) do
+            if gradeMap[shopItem.item] ~= nil then
+                shopItem.minGrade = gradeMap[shopItem.item]
+            end
+        end
+    end
+
+    local copy = ShopToSafeTable(shopName, Shops[shopName])
+    MySQL.Async.execute('UPDATE shops SET shop_data = @d WHERE shop_name = @n', {
+        ['@n'] = shopName, ['@d'] = json.encode(copy)
+    }, function(affected)
+        if affected and affected > 0 then
+            TriggerClientEvent('flake_shopsCL:notify', src, "Shop settings saved!", "success")
+            LoadShopsFromDatabase()
+        else
+            TriggerClientEvent('flake_shopsCL:notify', src, "Failed to save settings!", "error")
+        end
+    end)
 end)
