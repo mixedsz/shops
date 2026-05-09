@@ -119,23 +119,18 @@ function AddSocietyMoney(jobName, amount)
     end
 end
 
--- Returns society balance (async). Always calls cb — never hangs.
+-- Returns society balance via direct DB query — no event round-trips, no delay.
 local function GetSocietyBalance(jobName, cb)
     local res = Config.SocietyResource or ""
-    if res == "esx_society" and GetResourceState('esx_society') ~= 'missing' then
-        local fired = false
-        local function once(val)
-            if fired then return end
-            fired = true
-            cb(val or 0)
-        end
-        -- Safety timeout: if esx_society never fires the callback, continue anyway
-        Citizen.SetTimeout(3000, function() once(0) end)
-        pcall(function()
-            TriggerEvent('esx_society:getSocietyAccount', jobName, function(account)
-                once(account and account.money or 0)
-            end)
-        end)
+    if res == "esx_society" then
+        -- esx_society stores balances in addon_account_data as "society_<jobname>"
+        MySQL.Async.fetchScalar(
+            "SELECT money FROM addon_account_data WHERE name = @name LIMIT 1",
+            {['@name'] = 'society_' .. jobName},
+            function(money)
+                cb(tonumber(money) or 0)
+            end
+        )
     elseif res == "qb-management" and GetResourceState('qb-management') ~= 'missing' then
         local ok, bal = pcall(function() return exports['qb-management']:GetMoney(jobName) end)
         cb((ok and bal) and bal or 0)
