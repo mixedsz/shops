@@ -95,8 +95,9 @@ body {
 
 .logo img {
     height: 36px;
-    width: 36px;
-    object-fit: cover;
+    width: auto;
+    max-width: 120px;
+    object-fit: contain;
     border-radius: 8px;
     border: 1px solid #2a2a2a;
 }
@@ -540,3 +541,210 @@ input[type="text"]:focus {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+/* =============================================
+   POLICE THEME  —  Dark command-centre navy
+   Accent: #3b82f6  (police blue)
+============================================= */
+
+#wrapper.police-theme {
+    border-color: #1d4ed8;
+    box-shadow: 0 25px 80px rgba(29, 78, 216, 0.5),
+                inset 0 1px 0 rgba(96, 165, 250, 0.08);
+}
+
+#wrapper.police-theme #inner_wrap,
+#wrapper.police-theme #shopdisplay {
+    background: #030912;
+}
+
+#wrapper.police-theme #menuwrap {
+    background: linear-gradient(135deg, #050e20 0%, #08162e 100%);
+    border-bottom: 2px solid #1e40af;
+    position: relative;
+}
+
+/* Bright blue crown stripe at the very top of the header */
+#wrapper.police-theme #menuwrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent 0%, #1d4ed8 20%, #60a5fa 50%, #1d4ed8 80%, transparent 100%);
+    border-radius: 3px 3px 0 0;
+}
+
+#wrapper.police-theme #itembox {
+    background: #030912;
+}
+
+#wrapper.police-theme .shoptitle {
+    color: #93c5fd;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+#wrapper.police-theme .image {
+    background: #061124;
+    border-color: #1e3a6e;
+}
+
+#wrapper.police-theme .image:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 8px 28px rgba(59, 130, 246, 0.3);
+}
+
+#wrapper.police-theme .itemimg {
+    background: #040d1c;
+}
+
+#wrapper.police-theme .textwrap {
+    background: #061124;
+    border-top-color: #1e3a6e;
+}
+
+#wrapper.police-theme .textwrap .price {
+    color: #60a5fa;
+}
+
+#wrapper.police-theme #cartdisplay {
+    background: #050e20;
+    border-left: 1px solid #1e3a6e;
+}
+
+#wrapper.police-theme #carticon,
+#wrapper.police-theme #buy {
+    background: #050e20;
+    border-color: #1e3a6e;
+}
+
+#wrapper.police-theme .cartitem {
+    border-bottom-color: #0d1f3e;
+}
+
+#wrapper.police-theme .cartitem:hover {
+    background: #061124;
+}
+
+#wrapper.police-theme .priceperitem {
+    color: #60a5fa;
+}
+
+#wrapper.police-theme input[type="text"] {
+    background: #061124;
+    border-color: #1e3a6e;
+}
+
+#wrapper.police-theme #search-wrap {
+    background: #061124;
+    border-color: #1e3a6e;
+}
+
+#wrapper.police-theme ::-webkit-scrollbar-thumb        { background: #1e3a6e; }
+#wrapper.police-theme ::-webkit-scrollbar-thumb:hover  { background: #2e52a8; }
+
+/* =============================================
+   EMS / AMBULANCE THEME  —  Emergency red
+   Accent: #ef4444  (emergency red)
+   Main color of EMS is RED, not green
+============================================= */
+
+#wrapper.ems-theme {
+    border-color: #991b1b;
+    box-shadow: 0 25px 80px rgba(153, 27, 27, 0.55),
+                inset 0 1px 0 rgba(248, 113, 113, 0.06);
+}
+
+#wrapper.ems-theme #inner_wrap,
+#wrapper.ems-theme #shopdisplay {
+    background: #0d0101;
+}
+
+#wrapper.ems-theme #menuwrap {
+    background: linear-gradient(135deg, #160202 0%, #1e0303 100%);
+    border-bottom: 2px solid #7f1d1d;
+    position: relative;
+}
+
+/* Emergency red crown stripe */
+#wrapper.ems-theme #menuwrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent 0%, #b91c1c 20%, #fca5a5 50%, #b91c1c 80%, transparent 100%);
+    border-radius: 3px 3px 0 0;
+}
+
+#wrapper.ems-theme #itembox {
+    background: #0d0101;
+}
+
+#wrapper.ems-theme .shoptitle {
+    color: #fca5a5;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+#wrapper.ems-theme .image {
+    background: #1a0303;
+    border-color: #7f1d1d;
+}
+
+#wrapper.ems-theme .image:hover {
+    border-color: #ef4444;
+    box-shadow: 0 8px 28px rgba(239, 68, 68, 0.35);
+}
+
+#wrapper.ems-theme .itemimg {
+    background: #120202;
+}
+
+#wrapper.ems-theme .textwrap {
+    background: #1a0303;
+    border-top-color: #7f1d1d;
+}
+
+#wrapper.ems-theme .textwrap .price {
+    color: #f87171;
+}
+
+#wrapper.ems-theme #cartdisplay {
+    background: #140202;
+    border-left: 1px solid #7f1d1d;
+}
+
+#wrapper.ems-theme #carticon,
+#wrapper.ems-theme #buy {
+    background: #140202;
+    border-color: #7f1d1d;
+}
+
+#wrapper.ems-theme .cartitem {
+    border-bottom-color: #220404;
+}
+
+#wrapper.ems-theme .cartitem:hover {
+    background: #1a0303;
+}
+
+#wrapper.ems-theme .priceperitem {
+    color: #f87171;
+}
+
+#wrapper.ems-theme input[type="text"] {
+    background: #1a0303;
+    border-color: #7f1d1d;
+}
+
+#wrapper.ems-theme #search-wrap {
+    background: #1a0303;
+    border-color: #7f1d1d;
+}
+
+#wrapper.ems-theme ::-webkit-scrollbar-thumb        { background: #7f1d1d; }
+#wrapper.ems-theme ::-webkit-scrollbar-thumb:hover  { background: #991b1b; }

@@ -15,7 +15,7 @@ Citizen.CreateThread(function()
 
     -- Startup message
     Citizen.Wait(1000)
-    print("^2📦 FlakeShops ^0started successfully! -> ^6discord.gg/gcrz ^0for updates & new scripts.")
+    print("^2[FlakeShops] ^0started successfully! -> ^6discord.gg/gcrz ^0for updates & new scripts.")
 end)
 
 -- Helper Functions
@@ -128,6 +128,28 @@ AddEventHandler('flake_shops:buyItems', function(zone, cart, payMethod)
         return
     end
 
+    -- Job-restricted shops: verify the player's job and grade
+    if shopData.OwnerJob and shopData.OwnerJob ~= "" and shopData.RequireJob then
+        local playerJob, playerGrade = GetPlayerJobInfo(src)
+        if playerJob ~= shopData.OwnerJob then
+            TriggerClientEvent('flake_shopsCL:notify', src, "You are not authorized to shop here.", "error")
+            return
+        end
+
+        -- Check per-item grade requirements
+        local buildItemMap = {}
+        for _, shopItem in ipairs(shopData.Items) do buildItemMap[shopItem.item] = shopItem end
+        for _, cartItem in ipairs(cart) do
+            local ref = buildItemMap[cartItem.item]
+            if ref and ref.minGrade and ref.minGrade > 0 then
+                if playerGrade < ref.minGrade then
+                    TriggerClientEvent('flake_shopsCL:notify', src, "Your rank is too low to purchase: " .. cartItem.label, "error")
+                    return
+                end
+            end
+        end
+    end
+
     -- Check if payment method is valid
     local validPayment = false
     for _, currency in ipairs(shopData.Currency) do
@@ -163,8 +185,13 @@ AddEventHandler('flake_shops:buyItems', function(zone, cart, payMethod)
         return
     end
 
+    -- Credit job society account if this is a player-owned shop
+    if shopData.OwnerJob and shopData.OwnerJob ~= "" and shopData.SocietyPercent and shopData.SocietyPercent > 0 then
+        local cut = math.floor(totalCost * (shopData.SocietyPercent / 100))
+        if cut > 0 then AddSocietyMoney(shopData.OwnerJob, cut) end
+    end
+
     -- Log the transaction
-   -- Log the transaction
     TriggerEvent('flake_shops:logTransaction', src, zone, cart, totalCost, payMethod)
 
     -- Track analytics

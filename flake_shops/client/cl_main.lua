@@ -22,6 +22,17 @@ local isPickupTextUIShown = false
 -- Check if ox_lib is available
 local hasOxLib = GetResourceState('ox_lib') ~= 'missing'
 
+-- Returns true if the local player has the given job (or if no job is required)
+local function PlayerHasJob(jobName)
+    if not jobName or jobName == "" then return true end
+    if QBCore then
+        return PlayerData and PlayerData.job and PlayerData.job.name == jobName
+    elseif ESX then
+        return PlayerData and PlayerData.job and PlayerData.job.name == jobName
+    end
+    return false
+end
+
 -- Helper function for showing TextUI
 local function ShowTextUI(text)
     if hasOxLib then
@@ -107,6 +118,10 @@ function RefreshBlips()
 
     for k, v in pairs(Config.Shops) do
         if v.Blip then
+            -- Hide job-owned shop blips from players who don't have that job
+            if v.RequireJob and v.OwnerJob and v.OwnerJob ~= "" and not PlayerHasJob(v.OwnerJob) then
+                goto continue_blip
+            end
             for i = 1, #v.Pos do
                 local blip = AddBlipForCoord(v.Pos[i])
                 SetBlipSprite(blip, v.Blip.sprite)
@@ -115,10 +130,11 @@ function RefreshBlips()
                 SetBlipColour(blip, v.Blip.colour)
                 SetBlipAsShortRange(blip, v.Blip.shortRange)
                 BeginTextCommandSetBlipName("STRING")
-                AddTextComponentString(v.Blip.name)
+                AddTextComponentString(v.ShopLabel or v.Blip.name or k)
                 EndTextCommandSetBlipName(blip)
                 table.insert(blips, blip)
             end
+            ::continue_blip::
         end
     end
 end
@@ -208,6 +224,10 @@ Citizen.CreateThread(function()
         inZone = false
 
         for k, v in pairs(Config.Shops) do
+            -- Invisible to players who don't have the required job
+            if v.RequireJob and v.OwnerJob and v.OwnerJob ~= "" and not PlayerHasJob(v.OwnerJob) then
+                goto continue_shop
+            end
             for i = 1, #v.Pos do
                 local distance = #(coords - v.Pos[i])
                 local interactionDistance = v.UsePed and 2.0 or Config.Size.x
@@ -235,6 +255,7 @@ Citizen.CreateThread(function()
                     end
                 end
             end
+            ::continue_shop::
         end
 
         -- Check if we should show the text UI
@@ -268,33 +289,48 @@ end)
 -- Open Shop Menu
 function OpenShopMenu(zone)
     TriggerEvent('flake_shops:openShop', zone)
-    local items = Config.Shops[zone].Items
+    local shopCfg = Config.Shops[zone]
+    local items = shopCfg.Items
     local currencies = {}
-    local defaultCurrency = Config.Shops[zone].Currency[1] or "cash"
+    local defaultCurrency = shopCfg.Currency[1] or "cash"
     local currencyLabel = Config.CurrencyLabels[defaultCurrency] or defaultCurrency:upper()
-    local shopLogo = Config.Shops[zone].ShopLogo or "blackmarket.png"
+    local shopLogo = shopCfg.ShopLogo or "blackmarket.png"
 
-    -- Add currency information to each item
-    for i, item in ipairs(items) do
-        item.currencyLabel = currencyLabel
+    -- Use ShopLabel as the visible display name (falls back to internal key)
+    local displayName = shopCfg.ShopLabel or zone
+
+    -- Determine themed UI (police / ems / default)
+    local shopTheme = "default"
+    local accentColor = Config.UiColor or "#f59e0b"
+    if Config.JobThemes and shopCfg.OwnerJob and shopCfg.OwnerJob ~= "" then
+        local themeData = Config.JobThemes[shopCfg.OwnerJob]
+        if themeData then
+            shopTheme   = themeData.theme or "default"
+            accentColor = themeData.accentColor or accentColor
+        end
     end
 
+    -- Add currency label to each item
+    for _, item in ipairs(items) do item.currencyLabel = currencyLabel end
+
     -- Prepare currency options for payment
-    for _, currency in ipairs(Config.Shops[zone].Currency) do
+    for _, currency in ipairs(shopCfg.Currency) do
         local label = Config.CurrencyLabels[currency] or currency:upper()
         table.insert(currencies, {name = currency, label = label})
     end
 
     SetNuiFocus(true, true)
     SendNUIMessage({
-        type = "shop",
-        result = items,
-        name = zone,
-        currencies = currencies,
+        type         = "shop",
+        result       = items,
+        name         = displayName,  -- shown in the UI header
+        zone         = zone,         -- internal key sent back on purchase
+        currencies   = currencies,
         currencyLabel = currencyLabel,
         imageBaseUrl = Config.InventoryImgUrl,
-        shopLogo = shopLogo,
-        uiColor = Config.UiColor or "#f59e0b"
+        shopLogo     = shopLogo,
+        shopTheme    = shopTheme,
+        uiColor      = accentColor,
     })
 
     cart = {}

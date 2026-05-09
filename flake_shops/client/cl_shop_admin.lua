@@ -123,7 +123,7 @@ end)
 
 -- NUI Callbacks
 RegisterNUICallback('saveShop', function(data, cb)
-    TriggerServerEvent('flake_shops:saveShop', data.shopData, data.editMode)
+    TriggerServerEvent('flake_shops:saveShop', data.shopData, data.editMode, data.originalName)
     cb('ok')
 end)
 
@@ -153,11 +153,11 @@ end)
 RegisterNUICallback('getCurrentPosition', function(data, cb)
     local playerPed = PlayerPedId()
     local coords = GetEntityCoords(playerPed)
-    cb({
-        x = coords.x,
-        y = coords.y,
-        z = coords.z
-    })
+    cb({ x = coords.x, y = coords.y, z = coords.z })
+end)
+
+RegisterNUICallback('getCurrentHeading', function(data, cb)
+    cb({ heading = GetEntityHeading(PlayerPedId()) })
 end)
 
 -- Store items callback
@@ -182,30 +182,34 @@ end)
 -- Receive shops from server
 RegisterNetEvent('flake_shops:updateShops')
 AddEventHandler('flake_shops:updateShops', function(shops)
-    if shopsCallback then
-        -- Convert Shops table to array format for NUI
-        local shopsArray = {}
-        for shopName, shopData in pairs(shops) do
-            -- Convert vector3 positions to table format for NUI
-            local shopDataCopy = {}
-            for k, v in pairs(shopData) do
-                shopDataCopy[k] = v
-            end
-
-            if shopDataCopy.Pos then
-                local positions = {}
-                for i, pos in ipairs(shopDataCopy.Pos) do
-                    table.insert(positions, {x = pos.x, y = pos.y, z = pos.z})
-                end
-                shopDataCopy.Pos = positions
-            end
-
-            shopDataCopy.name = shopName
-            table.insert(shopsArray, shopDataCopy)
+    local shopsArray = {}
+    for shopName, shopData in pairs(shops) do
+        local shopDataCopy = {}
+        for k, v in pairs(shopData) do
+            shopDataCopy[k] = v
         end
 
+        if shopDataCopy.Pos then
+            local positions = {}
+            for i, pos in ipairs(shopDataCopy.Pos) do
+                table.insert(positions, {x = pos.x, y = pos.y, z = pos.z})
+            end
+            shopDataCopy.Pos = positions
+        end
+
+        shopDataCopy.name = shopName
+        table.insert(shopsArray, shopDataCopy)
+    end
+
+    if shopsCallback then
         shopsCallback(shopsArray)
         shopsCallback = nil
+    else
+        -- Broadcast update: push directly to NUI so the table refreshes live
+        SendNUIMessage({
+            type = "shopsUpdated",
+            shops = shopsArray
+        })
     end
 end)
 
@@ -322,9 +326,40 @@ end)
 -- NUI requests teleport to shop position (Goto button in admin panel)
 RegisterNUICallback('gotoShopPosition', function(data, cb)
     if data and data.x then
-        local ped = PlayerPedId()
-        SetEntityCoords(ped, data.x, data.y, data.z, false, false, false, true)
+        SetEntityCoords(PlayerPedId(), data.x, data.y, data.z, false, false, false, true)
         TriggerEvent('flake_shopsCL:notify', 'Teleported to shop location', 'success')
     end
-    cb({status = 'ok'})
+    cb({ status = 'ok' })
+end)
+
+-- ─── Boss Menu ────────────────────────────────────────────────────────────────
+
+RegisterCommand('shopboss', function()
+    TriggerServerEvent('flake_shops:requestBossMenu')
+end, false)
+
+RegisterNetEvent('flake_shops:receiveBossMenu')
+AddEventHandler('flake_shops:receiveBossMenu', function(shops, societyBalance, jobName, grades)
+    local playerInfo = GetPlayerInfo()
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        type           = "openBossMenu",
+        shops          = shops,
+        societyBalance = societyBalance,
+        jobName        = jobName,
+        grades         = grades or {},
+        playerName     = playerInfo.playerName,
+        playerId       = playerInfo.playerId,
+        uiColor        = Config.UiColor or "#f59e0b"
+    })
+end)
+
+RegisterNUICallback('closeBossMenu', function(data, cb)
+    SetNuiFocus(false, false)
+    cb({ status = 'ok' })
+end)
+
+RegisterNUICallback('saveBossShopSettings', function(data, cb)
+    TriggerServerEvent('flake_shops:saveBossShopSettings', data)
+    cb('ok')
 end)

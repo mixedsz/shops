@@ -16,7 +16,7 @@ local function SendDiscordLog(title, message, color)
             ["type"] = "rich",
             ["color"] = color or 3447003, -- Blue color by default
             ["footer"] = {
-                ["text"] = "Shop Logs • " .. os.date("%Y-%m-%d %H:%M:%S")
+                ["text"] = "Shop Logs - " .. os.date("%Y-%m-%d %H:%M:%S")
             }
         }
     }
@@ -44,7 +44,7 @@ AddEventHandler('flake_shops:logTransaction', function(playerId, zone, cart, tot
 
     local itemsList = ""
     for _, item in ipairs(cart) do
-        itemsList = itemsList .. "• " .. item.count .. "x " .. item.label .. " ($" .. item.price .. " each)\n"
+        itemsList = itemsList .. "- " .. item.count .. "x " .. item.label .. " ($" .. item.price .. " each)\n"
     end
 
     local message = string.format("**Player:** %s (ID: %s, Identifier: %s)\n**Shop:** %s\n**Total Cost:** $%s\n**Payment Method:** %s\n\n**Items Purchased:**\n%s",
@@ -74,7 +74,7 @@ AddEventHandler('flake_shops:logPickup', function(playerId, items)
 
     local itemsList = ""
     for _, item in ipairs(items) do
-        itemsList = itemsList .. "• " .. item.count .. "x " .. item.label .. "\n"
+        itemsList = itemsList .. "- " .. item.count .. "x " .. item.label .. "\n"
     end
 
     local message = string.format("**Player:** %s (ID: %s, Identifier: %s)\n\n**Items Picked Up:**\n%s",
