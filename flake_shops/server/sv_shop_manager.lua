@@ -428,18 +428,20 @@ AddEventHandler('flake_shops:requestBossMenu', function()
             return
         end
 
-    -- Find every shop owned by this job
-    local ownedShops = {}
-    for name, data in pairs(Shops) do
-        if data.OwnerJob and data.OwnerJob == jobName then
-            table.insert(ownedShops, ShopToSafeTable(name, data))
+        -- Find every shop owned by this job (case-insensitive, trimmed match)
+        local jobLower = jobName:lower():gsub("^%s*(.-)%s*$", "%1")
+        local ownedShops = {}
+        for name, data in pairs(Shops) do
+            local ownerLower = (data.OwnerJob or ""):lower():gsub("^%s*(.-)%s*$", "%1")
+            if ownerLower ~= "" and ownerLower == jobLower then
+                table.insert(ownedShops, ShopToSafeTable(name, data))
+            end
         end
-    end
 
-    if #ownedShops == 0 then
-        TriggerClientEvent('flake_shopsCL:notify', src, "Your job does not own any shops!", "error")
-        return
-    end
+        if #ownedShops == 0 then
+            TriggerClientEvent('flake_shopsCL:notify', src, "No shops found for job: " .. jobName .. " (check Owner Job field matches exactly)", "error")
+            return
+        end
 
     -- Grab analytics totals for each owned shop
     local shopNames = {}
@@ -483,7 +485,8 @@ AddEventHandler('flake_shops:saveBossShopSettings', function(data)
         if not isBoss then return end
 
         local shopName = data.shopName
-        if not Shops[shopName] or Shops[shopName].OwnerJob ~= jobName then
+        local shopOwner = (Shops[shopName] and Shops[shopName].OwnerJob or ""):lower():gsub("^%s*(.-)%s*$", "%1")
+        if not Shops[shopName] or shopOwner ~= jobName:lower():gsub("^%s*(.-)%s*$", "%1") then
             TriggerClientEvent('flake_shopsCL:notify', src, "You don't own this shop!", "error")
             return
         end
