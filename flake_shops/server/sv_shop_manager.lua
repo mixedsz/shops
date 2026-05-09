@@ -35,6 +35,39 @@ function GetPlayerJobInfo(source)
     return "", 0
 end
 
+-- Returns all grades for a job as [{grade=N, label="..."}] sorted ascending
+local function GetJobGrades(jobName, cb)
+    local grades = {}
+    if QBCore then
+        local jobData = QBCore.Shared.Jobs and QBCore.Shared.Jobs[jobName]
+        if jobData and jobData.grades then
+            for gradeLevel, gradeData in pairs(jobData.grades) do
+                table.insert(grades, {
+                    grade = tonumber(gradeLevel),
+                    label = gradeData.name or ("Grade " .. gradeLevel)
+                })
+            end
+            table.sort(grades, function(a, b) return a.grade < b.grade end)
+        end
+        cb(grades)
+    elseif ESX then
+        MySQL.Async.fetchAll(
+            'SELECT grade, label FROM job_grades WHERE job_name = @job ORDER BY grade ASC',
+            {['@job'] = jobName},
+            function(rows)
+                if rows then
+                    for _, r in ipairs(rows) do
+                        table.insert(grades, {grade = r.grade, label = r.label or ("Grade " .. r.grade)})
+                    end
+                end
+                cb(grades)
+            end
+        )
+    else
+        cb(grades)
+    end
+end
+
 -- Async: calls cb(true) if the player is at the highest grade for their job.
 -- This correctly handles custom job names (not just "boss") and grade 0 being top rank.
 local function IsJobBoss(source, jobName, gradeLevel, cb)
@@ -68,39 +101,6 @@ function AddSocietyMoney(jobName, amount)
         TriggerEvent('esx_society:addMoney', jobName, amount)
     elseif res == "qb-management" and GetResourceState('qb-management') ~= 'missing' then
         pcall(function() exports['qb-management']:AddMoney(jobName, amount) end)
-    end
-end
-
--- Returns all grades for a job as [{grade=N, label="..."}] sorted ascending
-local function GetJobGrades(jobName, cb)
-    local grades = {}
-    if QBCore then
-        local jobData = QBCore.Shared.Jobs and QBCore.Shared.Jobs[jobName]
-        if jobData and jobData.grades then
-            for gradeLevel, gradeData in pairs(jobData.grades) do
-                table.insert(grades, {
-                    grade = tonumber(gradeLevel),
-                    label = gradeData.name or ("Grade " .. gradeLevel)
-                })
-            end
-            table.sort(grades, function(a, b) return a.grade < b.grade end)
-        end
-        cb(grades)
-    elseif ESX then
-        MySQL.Async.fetchAll(
-            'SELECT grade, label FROM job_grades WHERE job_name = @job ORDER BY grade ASC',
-            {['@job'] = jobName},
-            function(rows)
-                if rows then
-                    for _, r in ipairs(rows) do
-                        table.insert(grades, {grade = r.grade, label = r.label or ("Grade " .. r.grade)})
-                    end
-                end
-                cb(grades)
-            end
-        )
-    else
-        cb(grades)
     end
 end
 
