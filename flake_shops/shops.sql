@@ -7,6 +7,15 @@ CREATE TABLE IF NOT EXISTS `shops` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `shop_analytics` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `shop_name` VARCHAR(100) NOT NULL,
+    `total_cost` DECIMAL(12,2) NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_shop_name` (`shop_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Example shop data structure (stored as JSON in shop_data column):
 -- {
 --     "Items": [

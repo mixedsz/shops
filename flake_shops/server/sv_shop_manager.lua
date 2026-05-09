@@ -9,6 +9,18 @@ Citizen.CreateThread(function()
         ESX = exports[Config.ESXgetSharedObject]:getSharedObject()
     end
 
+    -- Ensure required tables exist (safe for existing installs)
+    MySQL.Async.execute([[
+        CREATE TABLE IF NOT EXISTS `shop_analytics` (
+            `id` INT(11) NOT NULL AUTO_INCREMENT,
+            `shop_name` VARCHAR(100) NOT NULL,
+            `total_cost` DECIMAL(12,2) NOT NULL DEFAULT 0,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            INDEX `idx_shop_name` (`shop_name`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]], {}, function() end)
+
     -- Load shops from database on startup
     LoadShopsFromDatabase()
 end)
