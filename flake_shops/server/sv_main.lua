@@ -15,7 +15,7 @@ Citizen.CreateThread(function()
 
     -- Startup message
     Citizen.Wait(1000)
-    print("^2📦 FlakeShops ^0started successfully! -> ^6discord.gg/gcrz ^0for updates & new scripts.")
+    print("^2[FlakeShops] ^0started successfully! -> ^6discord.gg/gcrz ^0for updates & new scripts.")
 end)
 
 -- Helper Functions

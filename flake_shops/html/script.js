@@ -68,7 +68,7 @@ $(function() {
             } else {
                 logoSrc = 'img/' + logoImage;
             }
-            $("#menuwrap").prepend('<div class="logo"><img src="' + logoSrc + '" height="80px" onerror="this.src=\'img/blackmarket.png\'" /></div>');
+            $("#menuwrap").prepend('<div class="logo"><img src="' + logoSrc + '" onerror="this.src=\'img/blackmarket.png\'" /></div>');
 
             const baseUrl = data.imageBaseUrl;
             const SHOP_RESULT = data.result || [];

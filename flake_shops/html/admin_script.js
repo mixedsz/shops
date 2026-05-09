@@ -142,6 +142,9 @@ $(function() {
                                 <i class="fas fa-location-arrow"></i> Goto
                             </button>
                             <button class="action-btn edit" data-shop='${JSON.stringify(shop).replace(/'/g,"&#39;")}'>Edit</button>
+                            <button class="action-btn clone" data-shop='${JSON.stringify(shop).replace(/'/g,"&#39;")}'>
+                                <i class="fas fa-copy"></i> Clone
+                            </button>
                             <button class="action-btn delete" data-shop-name="${shop.name}">Delete</button>
                         </div>
                     </td>
@@ -202,6 +205,9 @@ $(function() {
                                 <i class="fas fa-location-arrow"></i> Goto
                             </button>
                             <button class="action-btn edit" data-shop='${JSON.stringify(shop).replace(/'/g,"&#39;")}'>Edit</button>
+                            <button class="action-btn clone" data-shop='${JSON.stringify(shop).replace(/'/g,"&#39;")}'>
+                                <i class="fas fa-copy"></i> Clone
+                            </button>
                             <button class="action-btn delete" data-shop-name="${shop.name}">Delete</button>
                         </div>
                     </td>
@@ -223,6 +229,31 @@ $(function() {
         showConfirm("Delete Shop", `Permanently delete "${shopName}"? This cannot be undone.`, function() {
             $.post("https://flake_shops/deleteShop", JSON.stringify({ shopName }), function() {
                 showNotification(`Shop "${shopName}" deleted!`, "success");
+                $.post("https://flake_shops/requestShops", JSON.stringify({}), function(shops) {
+                    allShops = shops || [];
+                    renderShopsTable();
+                    updateDashboard();
+                });
+            });
+        });
+    });
+
+    function generateCloneName(originalName) {
+        const existingNames = new Set(allShops.map(s => s.name));
+        const base = originalName + "_copy";
+        if (!existingNames.has(base)) return base;
+        let i = 2;
+        while (existingNames.has(base + i)) i++;
+        return base + i;
+    }
+
+    $("body").on("click", ".action-btn.clone", function() {
+        const original = JSON.parse($(this).attr("data-shop").replace(/&#39;/g, "'"));
+        const newName  = generateCloneName(original.name);
+        const cloned   = Object.assign({}, original, { name: newName });
+        showConfirm("Clone Shop", `Clone "${original.name}" as "${newName}"?`, function() {
+            $.post("https://flake_shops/saveShop", JSON.stringify({ shopData: cloned, editMode: false }), function() {
+                showNotification(`Shop cloned as "${newName}"!`, "success");
                 $.post("https://flake_shops/requestShops", JSON.stringify({}), function(shops) {
                     allShops = shops || [];
                     renderShopsTable();
