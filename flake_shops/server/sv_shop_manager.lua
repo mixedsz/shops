@@ -9,6 +9,18 @@ Citizen.CreateThread(function()
         ESX = exports[Config.ESXgetSharedObject]:getSharedObject()
     end
 
+    -- Ensure required tables exist (safe for existing installs)
+    MySQL.Async.execute([[
+        CREATE TABLE IF NOT EXISTS `shop_analytics` (
+            `id` INT(11) NOT NULL AUTO_INCREMENT,
+            `shop_name` VARCHAR(100) NOT NULL,
+            `total_cost` DECIMAL(12,2) NOT NULL DEFAULT 0,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            INDEX `idx_shop_name` (`shop_name`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]], {}, function() end)
+
     -- Load shops from database on startup
     LoadShopsFromDatabase()
 end)
@@ -33,6 +45,42 @@ function GetPlayerJobInfo(source)
         end
     end
     return "", 0
+end
+
+-- Returns all grades for a job as [{grade=N, label="..."}] sorted ascending
+local function GetJobGrades(jobName, cb)
+    local grades = {}
+    if QBCore then
+        local jobData = QBCore.Shared.Jobs and QBCore.Shared.Jobs[jobName]
+        if jobData and jobData.grades then
+            for gradeLevel, gradeData in pairs(jobData.grades) do
+                table.insert(grades, {
+                    grade = tonumber(gradeLevel),
+                    label = gradeData.name or ("Grade " .. gradeLevel)
+                })
+            end
+            table.sort(grades, function(a, b) return a.grade < b.grade end)
+        end
+        cb(grades)
+    elseif ESX then
+        local ok = pcall(function()
+            MySQL.Async.fetchAll(
+                'SELECT grade, label FROM job_grades WHERE job_name = @job ORDER BY grade ASC',
+                {['@job'] = jobName},
+                function(rows)
+                    if rows then
+                        for _, r in ipairs(rows) do
+                            table.insert(grades, {grade = r.grade, label = r.label or ("Grade " .. r.grade)})
+                        end
+                    end
+                    cb(grades)
+                end
+            )
+        end)
+        if not ok then cb(grades) end
+    else
+        cb(grades)
+    end
 end
 
 -- Async: calls cb(true) if the player is at the highest grade for their job.
@@ -71,46 +119,26 @@ function AddSocietyMoney(jobName, amount)
     end
 end
 
--- Returns all grades for a job as [{grade=N, label="..."}] sorted ascending
-local function GetJobGrades(jobName, cb)
-    local grades = {}
-    if QBCore then
-        local jobData = QBCore.Shared.Jobs and QBCore.Shared.Jobs[jobName]
-        if jobData and jobData.grades then
-            for gradeLevel, gradeData in pairs(jobData.grades) do
-                table.insert(grades, {
-                    grade = tonumber(gradeLevel),
-                    label = gradeData.name or ("Grade " .. gradeLevel)
-                })
-            end
-            table.sort(grades, function(a, b) return a.grade < b.grade end)
-        end
-        cb(grades)
-    elseif ESX then
-        MySQL.Async.fetchAll(
-            'SELECT grade, label FROM job_grades WHERE job_name = @job ORDER BY grade ASC',
-            {['@job'] = jobName},
-            function(rows)
-                if rows then
-                    for _, r in ipairs(rows) do
-                        table.insert(grades, {grade = r.grade, label = r.label or ("Grade " .. r.grade)})
-                    end
-                end
-                cb(grades)
-            end
-        )
-    else
-        cb(grades)
-    end
-end
-
--- Returns society balance for ESX society (async, fires cb with number)
+-- Returns society balance (async). Always calls cb — never hangs.
 local function GetSocietyBalance(jobName, cb)
     local res = Config.SocietyResource or ""
     if res == "esx_society" and GetResourceState('esx_society') ~= 'missing' then
-        TriggerEvent('esx_society:getSocietyAccount', jobName, function(account)
-            cb(account and account.money or 0)
+        local fired = false
+        local function once(val)
+            if fired then return end
+            fired = true
+            cb(val or 0)
+        end
+        -- Safety timeout: if esx_society never fires the callback, continue anyway
+        Citizen.SetTimeout(3000, function() once(0) end)
+        pcall(function()
+            TriggerEvent('esx_society:getSocietyAccount', jobName, function(account)
+                once(account and account.money or 0)
+            end)
         end)
+    elseif res == "qb-management" and GetResourceState('qb-management') ~= 'missing' then
+        local ok, bal = pcall(function() return exports['qb-management']:GetMoney(jobName) end)
+        cb((ok and bal) and bal or 0)
     else
         cb(0)
     end
@@ -428,18 +456,20 @@ AddEventHandler('flake_shops:requestBossMenu', function()
             return
         end
 
-    -- Find every shop owned by this job
-    local ownedShops = {}
-    for name, data in pairs(Shops) do
-        if data.OwnerJob and data.OwnerJob == jobName then
-            table.insert(ownedShops, ShopToSafeTable(name, data))
+        -- Find every shop owned by this job (case-insensitive, trimmed match)
+        local jobLower = jobName:lower():gsub("^%s*(.-)%s*$", "%1")
+        local ownedShops = {}
+        for name, data in pairs(Shops) do
+            local ownerLower = (data.OwnerJob or ""):lower():gsub("^%s*(.-)%s*$", "%1")
+            if ownerLower ~= "" and ownerLower == jobLower then
+                table.insert(ownedShops, ShopToSafeTable(name, data))
+            end
         end
-    end
 
-    if #ownedShops == 0 then
-        TriggerClientEvent('flake_shopsCL:notify', src, "Your job does not own any shops!", "error")
-        return
-    end
+        if #ownedShops == 0 then
+            TriggerClientEvent('flake_shopsCL:notify', src, "No shops found for job: " .. jobName .. " (check Owner Job field matches exactly)", "error")
+            return
+        end
 
     -- Grab analytics totals for each owned shop
     local shopNames = {}
@@ -483,7 +513,8 @@ AddEventHandler('flake_shops:saveBossShopSettings', function(data)
         if not isBoss then return end
 
         local shopName = data.shopName
-        if not Shops[shopName] or Shops[shopName].OwnerJob ~= jobName then
+        local shopOwner = (Shops[shopName] and Shops[shopName].OwnerJob or ""):lower():gsub("^%s*(.-)%s*$", "%1")
+        if not Shops[shopName] or shopOwner ~= jobName:lower():gsub("^%s*(.-)%s*$", "%1") then
             TriggerClientEvent('flake_shopsCL:notify', src, "You don't own this shop!", "error")
             return
         end
