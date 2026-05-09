@@ -229,8 +229,6 @@ AddEventHandler('flake_shops:deleteShop', function(shopName)
     }, function(affectedRows)
         if affectedRows > 0 then
             TriggerClientEvent('flake_shopsCL:notify', src, "Shop deleted successfully!", "success")
-            -- Close the admin UI
-            TriggerClientEvent('flake_shops:closeAdminUI', src)
             LoadShopsFromDatabase()
         else
             TriggerClientEvent('flake_shopsCL:notify', src, "Failed to delete shop!", "error")

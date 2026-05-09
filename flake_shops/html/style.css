@@ -95,8 +95,9 @@ body {
 
 .logo img {
     height: 36px;
-    width: 36px;
-    object-fit: cover;
+    width: auto;
+    max-width: 120px;
+    object-fit: contain;
     border-radius: 8px;
     border: 1px solid #2a2a2a;
 }

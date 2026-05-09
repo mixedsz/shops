@@ -182,30 +182,34 @@ end)
 -- Receive shops from server
 RegisterNetEvent('flake_shops:updateShops')
 AddEventHandler('flake_shops:updateShops', function(shops)
-    if shopsCallback then
-        -- Convert Shops table to array format for NUI
-        local shopsArray = {}
-        for shopName, shopData in pairs(shops) do
-            -- Convert vector3 positions to table format for NUI
-            local shopDataCopy = {}
-            for k, v in pairs(shopData) do
-                shopDataCopy[k] = v
-            end
-
-            if shopDataCopy.Pos then
-                local positions = {}
-                for i, pos in ipairs(shopDataCopy.Pos) do
-                    table.insert(positions, {x = pos.x, y = pos.y, z = pos.z})
-                end
-                shopDataCopy.Pos = positions
-            end
-
-            shopDataCopy.name = shopName
-            table.insert(shopsArray, shopDataCopy)
+    local shopsArray = {}
+    for shopName, shopData in pairs(shops) do
+        local shopDataCopy = {}
+        for k, v in pairs(shopData) do
+            shopDataCopy[k] = v
         end
 
+        if shopDataCopy.Pos then
+            local positions = {}
+            for i, pos in ipairs(shopDataCopy.Pos) do
+                table.insert(positions, {x = pos.x, y = pos.y, z = pos.z})
+            end
+            shopDataCopy.Pos = positions
+        end
+
+        shopDataCopy.name = shopName
+        table.insert(shopsArray, shopDataCopy)
+    end
+
+    if shopsCallback then
         shopsCallback(shopsArray)
         shopsCallback = nil
+    else
+        -- Broadcast update: push directly to NUI so the table refreshes live
+        SendNUIMessage({
+            type = "shopsUpdated",
+            shops = shopsArray
+        })
     end
 end)
 

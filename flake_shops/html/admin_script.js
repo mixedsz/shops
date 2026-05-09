@@ -94,6 +94,10 @@ $(function() {
             if (editMode && data.shopData) openShopModal(data.shopData);
         } else if (data.type === "closeShopAdmin") {
             $("#admin-wrapper").fadeOut();
+        } else if (data.type === "shopsUpdated") {
+            allShops = data.shops || [];
+            renderShopsTable();
+            updateDashboard();
         } else if (data.type === "frameworkDetected") {
             detectedFramework = data.framework || "esx";
         } else if (data.type === "analyticsData") {
@@ -228,12 +232,8 @@ $(function() {
         const shopName = $(this).attr("data-shop-name");
         showConfirm("Delete Shop", `Permanently delete "${shopName}"? This cannot be undone.`, function() {
             $.post("https://flake_shops/deleteShop", JSON.stringify({ shopName }), function() {
-                showNotification(`Shop "${shopName}" deleted!`, "success");
-                $.post("https://flake_shops/requestShops", JSON.stringify({}), function(shops) {
-                    allShops = shops || [];
-                    renderShopsTable();
-                    updateDashboard();
-                });
+                showNotification(`Deleting "${shopName}"...`, "info");
+                // Table will refresh automatically via the shopsUpdated broadcast
             });
         });
     });
@@ -253,12 +253,8 @@ $(function() {
         const cloned   = Object.assign({}, original, { name: newName });
         showConfirm("Clone Shop", `Clone "${original.name}" as "${newName}"?`, function() {
             $.post("https://flake_shops/saveShop", JSON.stringify({ shopData: cloned, editMode: false }), function() {
-                showNotification(`Shop cloned as "${newName}"!`, "success");
-                $.post("https://flake_shops/requestShops", JSON.stringify({}), function(shops) {
-                    allShops = shops || [];
-                    renderShopsTable();
-                    updateDashboard();
-                });
+                showNotification(`Cloning shop as "${newName}"...`, "info");
+                // Table will refresh automatically via the shopsUpdated broadcast
             });
         });
     });
@@ -483,13 +479,9 @@ $(function() {
         }
 
         $.post("https://flake_shops/saveShop", JSON.stringify({ shopData, editMode }), function() {
-            showNotification(`Shop "${shopName}" saved!`, "success");
+            showNotification(`Saving shop "${shopName}"...`, "info");
             $("#shop-modal").fadeOut(200);
-            $.post("https://flake_shops/requestShops", JSON.stringify({}), function(shops) {
-                allShops = shops || [];
-                renderShopsTable();
-                updateDashboard();
-            });
+            // Table will refresh automatically via the shopsUpdated broadcast
         });
     });
 
@@ -497,13 +489,9 @@ $(function() {
         const shopName = $("#shop-name").val().trim();
         showConfirm("Delete Shop", `Permanently delete "${shopName}"? This cannot be undone.`, function() {
             $.post("https://flake_shops/deleteShop", JSON.stringify({ shopName }), function() {
-                showNotification(`Shop "${shopName}" deleted!`, "success");
+                showNotification(`Deleting "${shopName}"...`, "info");
                 $("#shop-modal").fadeOut(200);
-                $.post("https://flake_shops/requestShops", JSON.stringify({}), function(shops) {
-                    allShops = shops || [];
-                    renderShopsTable();
-                    updateDashboard();
-                });
+                // Table will refresh automatically via the shopsUpdated broadcast
             });
         });
     });
