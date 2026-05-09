@@ -63,18 +63,21 @@ local function GetJobGrades(jobName, cb)
         end
         cb(grades)
     elseif ESX then
-        MySQL.Async.fetchAll(
-            'SELECT grade, label FROM job_grades WHERE job_name = @job ORDER BY grade ASC',
-            {['@job'] = jobName},
-            function(rows)
-                if rows then
-                    for _, r in ipairs(rows) do
-                        table.insert(grades, {grade = r.grade, label = r.label or ("Grade " .. r.grade)})
+        local ok = pcall(function()
+            MySQL.Async.fetchAll(
+                'SELECT grade, label FROM job_grades WHERE job_name = @job ORDER BY grade ASC',
+                {['@job'] = jobName},
+                function(rows)
+                    if rows then
+                        for _, r in ipairs(rows) do
+                            table.insert(grades, {grade = r.grade, label = r.label or ("Grade " .. r.grade)})
+                        end
                     end
+                    cb(grades)
                 end
-                cb(grades)
-            end
-        )
+            )
+        end)
+        if not ok then cb(grades) end
     else
         cb(grades)
     end
@@ -116,13 +119,26 @@ function AddSocietyMoney(jobName, amount)
     end
 end
 
--- Returns society balance for ESX society (async, fires cb with number)
+-- Returns society balance (async). Always calls cb — never hangs.
 local function GetSocietyBalance(jobName, cb)
     local res = Config.SocietyResource or ""
     if res == "esx_society" and GetResourceState('esx_society') ~= 'missing' then
-        TriggerEvent('esx_society:getSocietyAccount', jobName, function(account)
-            cb(account and account.money or 0)
+        local fired = false
+        local function once(val)
+            if fired then return end
+            fired = true
+            cb(val or 0)
+        end
+        -- Safety timeout: if esx_society never fires the callback, continue anyway
+        Citizen.SetTimeout(3000, function() once(0) end)
+        pcall(function()
+            TriggerEvent('esx_society:getSocietyAccount', jobName, function(account)
+                once(account and account.money or 0)
+            end)
         end)
+    elseif res == "qb-management" and GetResourceState('qb-management') ~= 'missing' then
+        local ok, bal = pcall(function() return exports['qb-management']:GetMoney(jobName) end)
+        cb((ok and bal) and bal or 0)
     else
         cb(0)
     end
